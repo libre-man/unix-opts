@@ -46,37 +46,50 @@ function if this option is given by user")
     :documentation "description of the option")
    (short
     :initarg  :short
-    :initform nil
     :accessor short
     :documentation "NIL or single char - short variant of the option")
    (long
     :initarg  :long
-    :initform nil
     :accessor long
     :documentation "NIL or long char - long variant of the option")
    (arg-parser
     :initarg  :arg-parser
-    :initform nil
     :accessor arg-parser
     :documentation "if not NIL, this options requires an argument, it will
-be parsed with this function"))
+be parsed with this function")
+   (meta-var
+    :initarg  :meta-var
+    :accessor meta-var
+    :documentation "if this option requires an argument, this is how it will
+be printed in option description"))
   (:documentation "representation of an option"))
 
 (defparameter *options* nil
   "list of all defined options")
 
-(defun add-option (name desc &rest rest)
-  (let ((short      (find-if #'characterp rest))
-        (long       (find-if #'stringp    rest))
-        (arg-parser (find-if #'functionp  rest)))
+(defun add-option (&rest args)
+  "Register an option."
+  (let ((name        (getf args :name))
+        (description (getf args :description "?"))
+        (short       (getf args :short))
+        (long        (getf args :long))
+        (arg-parser  (getf args :arg-parser))
+        (meta-var    (getf args :meta-var "ARG")))
     (unless (or short long)
       (error "at least one form of the option must be provided"))
+    (check-type name        keyword)
+    (check-type description string)
+    (check-type short       (or null character))
+    (check-type long        (or null string))
+;    (check-type arg-parser  list) ???
+    (check-type meta-var    string)
     (push (make-instance 'option
                          :name        name
-                         :description desc
+                         :description description
                          :short       short
                          :long        long
-                         :arg-parser  arg-parser)
+                         :arg-parser  arg-parser
+                         :meta-var    meta-var)
           *options*)))
 
 (defmacro define-opts (&rest descriptions)
@@ -139,19 +152,26 @@ test presence of the option and get its argument if the option is present."
       ;; stuff
       )))
 
-(defun describe (&key alpha-sort)
+(defun describe (&key prefix suffix (stream *standard-output*))
   "Return string describing options of the program that were defined with
-DEFINE-OPTS macro previously. If argument ALPHA-SORT is given and it's not
-NIL, descriptions of the options will be sorted alphabetically."
-  (let ((opts (funcall (if alpha-sort #'reverse #'identity)
-                       *options*)))
-    (with-output-to-string (stream)
-      (dolist (opt opts)
-        (with-slots (short long description) opt
-          ;; TODO: print arguments too
-          (format stream "  ~25a~a~%"
-                  (concatenate 'string
-                               (if short (format nil "-~c" short) "")
-                               (if (and short long) ", " "")
-                               (if long  (format nil "--~a" long) ""))
-                  description))))))
+DEFINE-OPTS macro previously. You can supply PREFIX and SUFFIX arguments
+that will be printed before and after options respectively. Output goes to
+STREAM."
+  (flet ((print-part (str)
+           (when str
+             (princ str stream)
+             (terpri stream))))
+    (print-part prefix)
+    (when *options*
+      (format stream "~%Available options:~%"))
+    (dolist (opt *options*)
+      (with-slots (short long description arg-parser meta-var) opt
+        (format stream "  ~27a~a~%"
+                (concatenate
+                 'string
+                 (if short (format nil "-~c" short) "")
+                 (if (and short long) ", " "")
+                 (if long  (format nil "--~a" long) "")
+                 (if arg-parser (format nil " ~a" meta-var) ""))
+                description)))
+    (print-part suffix)))
