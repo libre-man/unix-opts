@@ -26,7 +26,12 @@
 (defpackage   :unix-opts
   (:nicknames :opts)
   (:use       #:common-lisp)
-  (:export    #:define-opts
+  (:export    #:unknown-option
+              #:missing-option
+              #:arg-parser-failed
+              #:option
+              #:raw-arg
+              #:define-opts
               #:argv
               #:get-opts
               #:describe)
@@ -38,8 +43,8 @@
   ((name
     :initarg  :name
     :accessor name
-    :documentation "keyword that will be included in list returned by GET
-function if this option is given by user")
+    :documentation "keyword that will be included in list returned by
+GET-OPTS function if this option is given by user")
    (description
     :initarg  :description
     :accessor description
@@ -51,12 +56,12 @@ function if this option is given by user")
    (long
     :initarg  :long
     :accessor long
-    :documentation "NIL or long char - long variant of the option")
+    :documentation "NIL or string - long variant of the option")
    (arg-parser
     :initarg  :arg-parser
     :accessor arg-parser
-    :documentation "if not NIL, this options requires an argument, it will
-be parsed with this function")
+    :documentation "if not NIL, this option requires an argument, it will be
+parsed with this function")
    (meta-var
     :initarg  :meta-var
     :accessor meta-var
@@ -64,16 +69,48 @@ be parsed with this function")
 be printed in option description"))
   (:documentation "representation of an option"))
 
+(define-condition troublesome-option (simple-error)
+  ((option
+    :initarg :option
+    :reader option))
+  (:report (lambda (c s) (format s "troublesome option: ~s" (option c))))
+  (:documentation "Generalization over conditions that have to do with some
+particular option."))
+
+(define-condition unknown-option (troublesome-option)
+  ()
+  (:report (lambda (c s) (format s "unknown option: ~s" (option c))))
+  (:documentation "This condition is thrown when parser encounters
+unknown (not previously defined with DEFINE-OPTS) option."))
+
+(define-condition missing-arg (troublesome-option)
+  ()
+  (:report (lambda (c s) (format s "missing arg for option: ~s" (option c))))
+  (:documentation "This condition is thrown when some option OPTION wants
+an argument, but there is no such argument given."))
+
+(define-condition arg-parser-failed (troublesome-option)
+  ((raw-arg
+    :initarg :raw-arg
+    :reader raw-arg))
+  (:report (lambda (c s)
+             (format s
+                     "argument parser failed (option: ~s, string to parse: ~s)"
+                     (option c)
+                     (raw-arg c))))
+  (:documentation "This condition is thrown when some option OPTION wants
+an argument, it's given but cannot be parsed by argument parser."))
+
 (defparameter *options* nil
   "list of all defined options")
 
 (defun add-option (&rest args)
-  "Register an option."
+  "Register an option according to ARGS."
   (let ((name        (getf args :name))
         (description (getf args :description "?"))
         (short       (getf args :short))
         (long        (getf args :long))
-        (arg-parser  (getf args :arg-parser))
+        (arg-parser  (getf args :arg-parser #'identity))
         (meta-var    (getf args :meta-var "ARG")))
     (unless (or short long)
       (error "at least one form of the option must be provided"))
@@ -81,7 +118,7 @@ be printed in option description"))
     (check-type description string)
     (check-type short       (or null character))
     (check-type long        (or null string))
-;    (check-type arg-parser  list) ???
+    (check-type arg-parser  function)
     (check-type meta-var    string)
     (push (make-instance 'option
                          :name        name
@@ -93,14 +130,29 @@ be printed in option description"))
           *options*)))
 
 (defmacro define-opts (&rest descriptions)
-  "Define command line options. DESCRIPTIONS must be a list, where every
-element is also a list. CAR of this list must be a keyword denoting name of
-the option. CADR of this list must be a string describing the option. Next,
-there may be a character (short option) and/or string (long option). If
-particular option should take an argument, you may add a function that will
-be called to parse the argument in form of string into your desired type."
-  `(dolist (description ',descriptions)
-     (apply #'add-option description)))
+  "Define command line options. Arguments of this macro must be plists
+containing various parameters. Here we enumerate all allowed parameters:
+
+:NAME - keyword that will be included in list returned by GET-OPTS function
+if actual option is supplied by user.
+
+:DESCRIPTION - description of the option (it will be used in DESCRIBE
+command. This argument is optional, it's recommended to supply it.
+
+:SHORT - single character - short variant of the option. You may omit this
+argument if you supply :LONG variant of option.
+
+:LONG - string, long variant of option. You may omit this argument if you
+supply :SHORT variant of option.
+
+:ARG-PARSER - if actual option must take an argument, supply this argument,
+it must be a function that takes a string and parses it.
+
+:META-VAR - if actual option requires an argument, this is how it will be
+printed in option description."
+  `(progn
+     ,@(mapcar (lambda (args) (cons 'add-option args))
+               descriptions)))
 
 (defun argv ()
   "Return list of program's arguments, including command used to execute the
@@ -116,41 +168,56 @@ program as first elements of the list."
   #+lispworks system:*line-arguments-list*
   #+sbcl      sb-ext:*posix-argv*)
 
-(defun shortp (opt)
-  "Return option if OPT is a short option and NIL otherwise."
-  (and (= (length opt) 2)
-       (char=  #\- (char opt 0))
-       (find (char opt 1) *options* :test #'char= :key #'short)))
-
-(defun longp (opt)
-  "Return option if OPT is a long option and NIL otherwise."
-  (and (> (length opt) 2)
-       (char= #\- (char opt 0))
-       (char= #\- (char opt 1))
-       (find (subseq opt 2) *options* :test #'string= :key #'long)))
-
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use ARGV function to get list of
 command line arguments. Return two values: list that contains keywords
 associated with command line options with DEFINE-OPTS macro, and list of
 free arguments. If some option requires an argument, you can use GETF to
-test presence of the option and get its argument if the option is present."
+test presence of the option and get its argument if the option is present.
+
+The parser may signal various conditions, let's list them all specifying
+which restarts are available for every condition, and what kind of
+information the programmer can extract from the conditions.
+
+UNKNOWN-OPTION is thrown when parser encounters unknown (not previously
+defined with DEFINE-OPTS) option. Use OPTION reader to get name of the
+option (string). Available restarts: USE-VALUE (substitute the option and
+try again), SKIP-OPTION (ignore the option).
+
+MISSING-ARG is thrown when some option wants an argument, but there is no
+such argument given. Use OPTION reader to get name of the
+option (string). Available restarts: USE-VALUE (supplied value will be
+used), SKIP-OPTION (ignore the option).
+
+ARG-PARSER-FAILED is thrown when some option wants an argument, it's given
+but cannot be parsed by argument parser. Use OPTION reader to get name of
+the option (string) and RAW-ARG to get raw string representing the argument
+before parsing. Available restarts: USE-VALUE (supplied value will be used),
+SKIP-OPTION (ignore the option), REPARSE-ARG (supplied string will be parsed
+instead)."
   (flet ((split-short-opts (arg)
            (if (and (> (length arg) 1)
                     (char=  #\- (char arg 0))
                     (char/= #\- (char arg 1)))
                (mapcar (lambda (c) (format nil "-~c" c))
                        (cdr (coerce arg 'list)))
-               (list arg))))
+               (list arg)))
+         (shortp (opt)
+           (and (= (length opt) 2)
+                (char=  #\- (char opt 0))))
+         (longp (opt)
+           (and (> (length opt) 2)
+                (char= #\- (char opt 0))
+                (char= #\- (char opt 1)))))
     (do ((tokens (mapcan #'split-short-opts
                          (or options (cdr (argv))))
                  (cdr tokens))
          pending-arg ; don't forget about --file=blah syntax
          result)
         ((null tokens) (nreverse result))
-      ;; stuff
-      )))
+      (let ((item (car tokens)))
+        nil))))
 
 (defun describe (&key prefix suffix (stream *standard-output*))
   "Return string describing options of the program that were defined with
