@@ -27,8 +27,11 @@
   (:nicknames :opts)
   (:use       #:common-lisp)
   (:export    #:unknown-option
-              #:missing-option
+              #:missing-arg
               #:arg-parser-failed
+              #:use-value
+              #:skip-option
+              #:reparse-arg
               #:option
               #:raw-arg
               #:define-opts
@@ -133,22 +136,22 @@ an argument, it's given but cannot be parsed by argument parser."))
   "Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
-:NAME - keyword that will be included in list returned by GET-OPTS function
+:NAME -- keyword that will be included in list returned by GET-OPTS function
 if actual option is supplied by user.
 
-:DESCRIPTION - description of the option (it will be used in DESCRIBE
-command. This argument is optional, it's recommended to supply it.
+:DESCRIPTION -- description of the option (it will be used in DESCRIBE
+command). This argument is optional, but it's recommended to supply it.
 
-:SHORT - single character - short variant of the option. You may omit this
+:SHORT -- single character - short variant of the option. You may omit this
 argument if you supply :LONG variant of option.
 
-:LONG - string, long variant of option. You may omit this argument if you
+:LONG -- string, long variant of option. You may omit this argument if you
 supply :SHORT variant of option.
 
-:ARG-PARSER - if actual option must take an argument, supply this argument,
+:ARG-PARSER -- if actual option must take an argument, supply this argument,
 it must be a function that takes a string and parses it.
 
-:META-VAR - if actual option requires an argument, this is how it will be
+:META-VAR -- if actual option requires an argument, this is how it will be
 printed in option description."
   `(progn
      ,@(mapcar (lambda (args) (cons 'add-option args))
@@ -204,6 +207,15 @@ instead)."
                  (mapcar (lambda (c) (format nil "-~c" c))
                          (cdr (coerce arg 'list)))
                  (list arg)))
+           (split-on-= (arg)
+             (if (and (char= #\- (char arg 0))
+                      (char/= #\= (char arg 1)))
+                 (let ((pos (position #\= arg :test #'char=)))
+                   (if pos
+                       (list (subseq arg 0 pos)
+                             (subseq arg (1+ pos) (length arg)))
+                       (list arg)))
+                 (list arg)))
            (shortp (opt)
              (and (= (length opt) 2)
                   (char=  #\- (char opt 0))))
@@ -225,7 +237,8 @@ instead)."
                              #'long))
                (find opt *options* :key key :test #'string=))))
     (do ((tokens (mapcan #'split-short-opts
-                         (or options (cdr (argv))))
+                         (mapcan #'split-on-=
+                                 (or options (cdr (argv)))))
                  (cdr tokens))
          poption-name
          poption-raw
@@ -236,21 +249,22 @@ instead)."
               (null poption-name))
          (values (nreverse options)
                  (nreverse free-args)))
-      (labels ((push-arg (arg)
-                 (push poption-name options)
-                 (push arg          options)
+      (labels ((push-option (name value)
+                 (push name options)
+                 (push value options)
                  (setf poption-name nil))
                (process-arg (arg)
                  (restart-case
                      (handler-case
-                         (push-arg (funcall poption-parser arg))
+                         (push-option poption-name
+                                      (funcall poption-parser arg))
                        (error (condition)
                          (declare (ignore condition))
                          (error 'arg-parser-failed
                                 :option poption-raw
                                 :raw-arg arg)))
                    (use-value (value)
-                     (push-arg value))
+                     (push-option poption-name value))
                    (skip-option ()
                      (setf poption-name nil))
                    (reparse-arg (str)
@@ -263,7 +277,7 @@ instead)."
                              (setf poption-name (name option)
                                    poption-raw  opt
                                    poption-parser parser)
-                             (push (name option) options)))
+                             (push-option (name option) t)))
                        (restart-case
                            (error 'unknown-option
                                   :option opt)
@@ -278,7 +292,7 @@ instead)."
                      (error 'missing-arg
                             :option poption-raw)
                    (use-value (value)
-                     (push-arg value))
+                     (push-option poption-name value))
                    (skip-option ()
                      (setf poption-name nil))))
                 ((optionp item)
@@ -293,10 +307,11 @@ STREAM."
   (flet ((print-part (str)
            (when str
              (princ str stream)
+             (terpri stream)
              (terpri stream))))
     (print-part prefix)
     (when *options*
-      (format stream "~%Available options:~%"))
+      (format stream "Available options:~%"))
     (dolist (opt *options*)
       (with-slots (short long description arg-parser meta-var) opt
         (format stream "  ~27a~a~%"
