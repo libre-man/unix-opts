@@ -37,23 +37,24 @@ define-opts &rest descriptions
 Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
-`:name` -- keyword that will be included in list returned by `get-opts`
+`:name` &ndash; keyword that will be included in list returned by `get-opts`
 function if actual option is supplied by user.
 
-`:description` -- description of the option (it will be used in `describe`
-command). This argument is optional, but it's recommended to supply it.
+`:description` &ndash; description of the option (it will be used in
+`describe` command). This argument is optional, but it's recommended to
+supply it.
 
-`:short` -- single character -- short variant of the option. You may omit
+`:short` &ndash; single character, short variant of the option. You may omit
 this argument if you supply `:long` variant of option.
 
-`:long` -- string, long variant of option. You may omit this argument if you
-supply `:short` variant of option.
+`:long` &ndash; string, long variant of option. You may omit this argument
+if you supply `:short` variant of option.
 
-`:arg-parser` - if actual option must take an argument, supply this
+`:arg-parser` &ndash; if actual option must take an argument, supply this
 argument, it must be a function that takes a string and parses it.
 
-`:meta-var` - if actual option requires an argument, this is how it will be
-printed in option description.
+`:meta-var` &ndash; if actual option requires an argument, this is how it
+will be printed in option description.
 
 ----
 
