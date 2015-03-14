@@ -208,7 +208,8 @@ instead)."
                          (cdr (coerce arg 'list)))
                  (list arg)))
            (split-on-= (arg)
-             (if (and (char= #\- (char arg 0))
+             (if (and (> (length arg) 1)
+                      (char= #\- (char arg 0))
                       (char/= #\= (char arg 1)))
                  (let ((pos (position #\= arg :test #'char=)))
                    (if pos
