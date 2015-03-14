@@ -293,9 +293,13 @@ instead)."
                      (error 'missing-arg
                             :option poption-raw)
                    (use-value (value)
-                     (push-option poption-name value))
+                     (push-option poption-name value)
+                     (when item
+                       (process-option item)))
                    (skip-option ()
-                     (setf poption-name nil))))
+                     (setf poption-name nil)
+                     (when item
+                       (process-option item)))))
                 ((optionp item)
                  (process-option item))
                 (t (push item free-args))))))))
