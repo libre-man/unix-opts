@@ -20,11 +20,15 @@ option condition
 Take a condition `condition` (`unknown-option`, `missing-arg`, or
 `arg-parser-failed`) and return string representing option in question.
 
+----
+
 ```
 raw-arg condition
 ```
 
 Take a condition of type `arg-parser-failed` and return raw argument string.
+
+----
 
 ```
 define-opts &rest descriptions
@@ -51,12 +55,16 @@ argument, it must be a function that takes a string and parses it.
 `:meta-var` - if actual option requires an argument, this is how it will be
 printed in option description.
 
+----
+
 ```
 argv
 ```
 
 Return list of program's arguments, including command used to execute the
 program as first elements of the list.
+
+----
 
 ```
 get-opts &optional options
@@ -89,6 +97,8 @@ the option (string) and `raw-arg` to get raw string representing the
 argument before parsing. Available restarts: `use-value` (supplied value
 will be used), `skip-option` (ignore the option), `reparse-arg` (supplied
 string will be parsed instead).
+
+----
 
 ```
 describe &key prefix suffix stream
