@@ -154,6 +154,7 @@ it must be a function that takes a string and parses it.
 :META-VAR -- if actual option requires an argument, this is how it will be
 printed in option description."
   `(progn
+     (setf *options* nil)
      ,@(mapcar (lambda (args) (cons 'add-option args))
                descriptions)
      nil))
