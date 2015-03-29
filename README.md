@@ -4,7 +4,9 @@ This is a minimalistic parser of command line options. Main advantage of
 this library is ability to concisely define command line options once and
 then use this definition for parsing and extraction of command line
 arguments, as well as printing description of command line options (you get
-`--help` for free). This way you don't need to repeat yourself.
+`--help` for free). This way you don't need to repeat yourself. Also,
+`unix-opts` doesn't depend on anything and allows to precisely control
+behavior of the parser via Common Lisp restarts.
 
 ## Installation
 
