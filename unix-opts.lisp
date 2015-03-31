@@ -157,7 +157,8 @@ printed in option description."
      (setf *options* nil)
      ,@(mapcar (lambda (args) (cons 'add-option args))
                descriptions)
-     nil))
+     (setf *options* (nreverse *options*))
+     (values)))
 
 (defun argv ()
   "Return list of program's arguments, including command used to execute the
@@ -172,6 +173,56 @@ program as first elements of the list."
   #+gcl       si:*command-args*
   #+lispworks system:*line-arguments-list*
   #+sbcl      sb-ext:*posix-argv*)
+
+(defun split-short-opts (arg)
+  "Split short options, for example \"-ab\" will produce \"-a\" and
+\"-b\". ARG must be a string, return value is list of strings."
+  (if (and (> (length arg) 1)
+           (char=  #\- (char arg 0))
+           (char/= #\- (char arg 1)))
+      (mapcar (lambda (c) (format nil "-~c" c))
+              (cdr (coerce arg 'list)))
+      (list arg)))
+
+(defun split-on-= (arg)
+  "Split string ARG on \"=\", return value is list of strings."
+  (if (and (> (length arg) 1)
+           (char=  #\- (char arg 0))
+           (char/= #\= (char arg 1)))
+      (let ((pos (position #\= arg :test #'char=)))
+        (if pos
+            (list (subseq arg 0 pos)
+                  (subseq arg (1+ pos) (length arg)))
+            (list arg)))
+      (list arg)))
+
+(defun shortp (opt)
+  "Predicate that checks if OPT is a short option."
+  (and (= (length opt) 2)
+       (char=  #\- (char opt 0))))
+
+(defun longp (opt)
+  "Predicate that checks if OPT is a long option."
+  (and (> (length opt) 2)
+       (char= #\- (char opt 0))
+       (char= #\- (char opt 1))))
+
+(defun optionp (str)
+  "This predicate checks if string STR is an option."
+  (or (shortp str) (longp str)))
+
+(defun argp (str)
+  "Check if string STR is an argument (not option)."
+  (and (typep str 'string)
+       (not (optionp str))))
+
+(defun find-option (opt)
+  "Find option OPT and return object that represents it or NIL."
+  (multiple-value-bind (opt key)
+      (if (shortp opt)
+          (values (subseq opt 1) #'short)
+          (values (subseq opt 2) #'long))
+    (find opt *options* :key key :test #'string=)))
 
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
@@ -201,109 +252,72 @@ the option (string) and RAW-ARG to get raw string representing the argument
 before parsing. Available restarts: USE-VALUE (supplied value will be used),
 SKIP-OPTION (ignore the option), REPARSE-ARG (supplied string will be parsed
 instead)."
-  (labels ((split-short-opts (arg)
-             (if (and (> (length arg) 1)
-                      (char=  #\- (char arg 0))
-                      (char/= #\- (char arg 1)))
-                 (mapcar (lambda (c) (format nil "-~c" c))
-                         (cdr (coerce arg 'list)))
-                 (list arg)))
-           (split-on-= (arg)
-             (if (and (> (length arg) 1)
-                      (char= #\- (char arg 0))
-                      (char/= #\= (char arg 1)))
-                 (let ((pos (position #\= arg :test #'char=)))
-                   (if pos
-                       (list (subseq arg 0 pos)
-                             (subseq arg (1+ pos) (length arg)))
-                       (list arg)))
-                 (list arg)))
-           (shortp (opt)
-             (and (= (length opt) 2)
-                  (char=  #\- (char opt 0))))
-           (longp (opt)
-             (and (> (length opt) 2)
-                  (char= #\- (char opt 0))
-                  (char= #\- (char opt 1))))
-           (optionp (str)
-             (or (shortp str) (longp str)))
-           (argp (str)
-             (and str
-                  (not (optionp str))))
-           (find-option (opt)
-             (multiple-value-bind (opt key)
-                 (if (shortp opt)
-                     (values (subseq opt 1)
-                             #'short)
-                     (values (subseq opt 2)
-                             #'long))
-               (find opt *options* :key key :test #'string=))))
-    (do ((tokens (mapcan #'split-short-opts
-                         (mapcan #'split-on-=
-                                 (or options (cdr (argv)))))
-                 (cdr tokens))
-         poption-name
-         poption-raw
-         poption-parser
-         options
-         free-args)
-        ((and (null tokens)
-              (null poption-name))
-         (values (nreverse options)
-                 (nreverse free-args)))
-      (labels ((push-option (name value)
-                 (push name options)
-                 (push value options)
-                 (setf poption-name nil))
-               (process-arg (arg)
-                 (restart-case
-                     (handler-case
-                         (push-option poption-name
-                                      (funcall poption-parser arg))
-                       (error (condition)
-                         (declare (ignore condition))
-                         (error 'arg-parser-failed
-                                :option poption-raw
-                                :raw-arg arg)))
-                   (use-value (value)
-                     (push-option poption-name value))
-                   (skip-option ()
-                     (setf poption-name nil))
-                   (reparse-arg (str)
-                     (process-arg str))))
-               (process-option (opt)
-                 (let ((option (find-option opt)))
-                   (if option
-                       (let ((parser (arg-parser option)))
-                         (if parser
-                             (setf poption-name (name option)
-                                   poption-raw  opt
-                                   poption-parser parser)
-                             (push-option (name option) t)))
-                       (restart-case
-                           (error 'unknown-option
-                                  :option opt)
-                         (use-value (value)
-                           (process-option value))
-                         (skip-option ()))))))
-        (let ((item (car tokens)))
-          (cond ((and poption-name (argp item))
-                 (process-arg item))
-                (poption-name
-                 (restart-case
-                     (error 'missing-arg
-                            :option poption-raw)
-                   (use-value (value)
-                     (push-option poption-name value)
-                     (when item
-                       (process-option item)))
-                   (skip-option ()
-                     (setf poption-name nil)
-                     (when item
-                       (process-option item)))))
-                ((optionp item)
-                 (process-option item))
-                (t (push item free-args))))))))
+  (do ((tokens (mapcan #'split-short-opts
+                       (mapcan #'split-on-=
+                               (or options (cdr (argv)))))
+               (cdr tokens))
+       poption-name
+       poption-raw
+       poption-parser
+       options
+       free-args)
+      ((and (null tokens)
+            (null poption-name))
+       (values (nreverse options)
+               (nreverse free-args)))
+    (labels ((push-option (name value)
+               (push name options)
+               (push value options)
+               (setf poption-name nil))
+             (process-arg (arg)
+               (restart-case
+                   (handler-case
+                       (push-option poption-name
+                                    (funcall poption-parser arg))
+                     (error (condition)
+                       (declare (ignore condition))
+                       (error 'arg-parser-failed
+                              :option poption-raw
+                              :raw-arg arg)))
+                 (use-value (value)
+                   (push-option poption-name value))
+                 (skip-option ()
+                   (setf poption-name nil))
+                 (reparse-arg (str)
+                   (process-arg str))))
+             (process-option (opt)
+               (let ((option (find-option opt)))
+                 (if option
+                     (let ((parser (arg-parser option)))
+                       (if parser
+                           (setf poption-name (name option)
+                                 poption-raw  opt
+                                 poption-parser parser)
+                           (push-option (name option) t)))
+                     (restart-case
+                         (error 'unknown-option
+                                :option opt)
+                       (use-value (value)
+                         (process-option value))
+                       (skip-option ()))))))
+      (let ((item (car tokens)))
+        (cond ((and poption-name (argp item))
+               (process-arg item))
+              (poption-name
+               (restart-case
+                   (error 'missing-arg
+                          :option poption-raw)
+                 (use-value (value)
+                   (push-option poption-name value)
+                   (when item
+                     (process-option item)))
+                 (skip-option ()
+                   (setf poption-name nil)
+                   (when item
+                     (process-option item)))))
+              ((optionp item)
+               (process-option item))
+              (t (push item free-args)))))))
 
 (defun describe (&key prefix suffix (stream *standard-output*))
   "Return string describing options of the program that were defined with
