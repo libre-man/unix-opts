@@ -185,6 +185,6 @@ sexy! Basically, we have defined all the options just like this:
 
 ## License
 
-Copyright (c) 2015 Mark Karpov
+Copyright © 2015 Mark Karpov
 
 Distributed under MIT License.

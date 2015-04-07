@@ -3,7 +3,7 @@
 ;;; This is example of unix-opts, a minimalistic parser of command line
 ;;; options.
 ;;;
-;;; Copyright (c) 2015 Mark Karpov
+;;; Copyright © 2015 Mark Karpov
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the

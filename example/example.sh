@@ -3,7 +3,7 @@
 # This little script alleviates testing of the library for SBCL users. You
 # can also edit it if you're using different CL implementation.
 #
-# Copyright (c) 2015 Mark Karpov
+# Copyright © 2015 Mark Karpov
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
