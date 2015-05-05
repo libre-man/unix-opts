@@ -326,27 +326,68 @@ instead)."
                (process-option item))
               (t (push item free-args)))))))
 
-(defun describe (&key prefix suffix (stream *standard-output*))
+(defun print-opts (&optional (stream *standard-output*))
+  "Print info about defined options to STREAM. Every option get its own line
+with description."
+  (dolist (opt *options*)
+    (with-slots (short long description arg-parser meta-var) opt
+      (format stream "  ~25a~a~%"
+              (concatenate
+               'string
+               (if short (format nil "-~c" short) "")
+               (if (and short long) ", " "")
+               (if long  (format nil "--~a" long) "")
+               (if arg-parser (format nil " ~a" meta-var) ""))
+              description)))
+  (terpri stream))
+
+(defun print-opts* (margin)
+  "Return a string containing info about defined options. All options are
+displayed on one line, although this function tries to print it elegantly if
+it gets too long."
+  (let ((fill-col (- 80 margin))
+        (i 0)
+        (last-newline 0))
+    (with-output-to-string (s)
+      (dolist (opt *options*)
+        (with-slots (short long arg-parser meta-var) opt
+          (let ((str
+                 (format nil " [~a]"
+                         (concatenate
+                          'string
+                          (if short (format nil "-~c" short) "")
+                          (if (and short long) "|" "")
+                          (if long  (format nil "--~a" long) "")
+                          (if arg-parser (format nil " ~a" meta-var) "")))))
+                (incf i (length str))
+                (when (> (- i last-newline) fill-col)
+                  (terpri s)
+                  (dotimes (x margin)
+                    (princ #\space s))
+                  (setf last-newline i))
+                (princ str s)))))))
+
+(defun describe (&key prefix suffix usage-of args (stream *standard-output*))
   "Return string describing options of the program that were defined with
 DEFINE-OPTS macro previously. You can supply PREFIX and SUFFIX arguments
-that will be printed before and after options respectively. Output goes to
-STREAM."
+that will be printed before and after options respectively. If USAGE-OF is
+supplied, it should be a string, name of the program for \"Usage: \"
+section. This section is only printed if this name is given. If your program
+takes arguments (apart from options), you can specify how to print them in
+\"Usage: \" section with ARGS option (should be a string designator). Output
+goes to STREAM."
   (flet ((print-part (str)
            (when str
              (princ str stream)
-             (terpri stream)
              (terpri stream))))
     (print-part prefix)
+    (terpri stream)
     (when *options*
-      (format stream "Available options:~%"))
-    (dolist (opt *options*)
-      (with-slots (short long description arg-parser meta-var) opt
-        (format stream "  ~25a~a~%"
-                (concatenate
-                 'string
-                 (if short (format nil "-~c" short) "")
-                 (if (and short long) ", " "")
-                 (if long  (format nil "--~a" long) "")
-                 (if arg-parser (format nil " ~a" meta-var) ""))
-                description)))
+      (when usage-of
+        (format stream "Usage: ~a~a~@[ ~a~]~%~%"
+                usage-of
+                (print-opts* (+ 7 (length usage-of)))
+                args))
+      (format stream "Available options:~%")
+      (print-opts stream))
     (print-part suffix)))

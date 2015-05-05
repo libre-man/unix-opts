@@ -83,7 +83,9 @@
   (when-option (options :help)
     (opts:describe
      :prefix "example — program to demonstrate unix-opts library"
-     :suffix "so that's how it works…"))
+     :suffix "so that's how it works…"
+     :usage-of "example.sh"
+     :args     "[FREE-ARGS]"))
   (when-option (options :verbose)
     (format t "OK, running in verbose mode…~%"))
   (when-option (options :level)

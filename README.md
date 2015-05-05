@@ -127,13 +127,16 @@ file. Here is some tests:
 $ sh example.sh --help
 example — program to demonstrate unix-opts library
 
-Available options:
-  -h, --help               print this help text
-  -v, --verbose            verbose output
-  -l, --level LEVEL        the program will run on LEVEL level
-  -o, --output FILE        redirect output to file FILE
-so that's how it works…
+Usage: example.sh [-o|--output FILE] [-l|--level LEVEL] [-v|--verbose]
+                  [-h|--help] [FREE-ARGS]
 
+Available options:
+  -o, --output FILE        redirect output to file FILE
+  -l, --level LEVEL        the program will run on LEVEL level
+  -v, --verbose            verbose output
+  -h, --help               print this help text
+
+so that's how it works…
 free args:
 $ sh example.sh -v file1.txt file2.txt
 OK, running in verbose mode…
