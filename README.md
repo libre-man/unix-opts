@@ -127,14 +127,14 @@ file. Here is some tests:
 $ sh example.sh --help
 example — program to demonstrate unix-opts library
 
-Usage: example.sh [-o|--output FILE] [-l|--level LEVEL] [-v|--verbose]
-                  [-h|--help] [FREE-ARGS]
+Usage: example.sh [-h|--help] [-v|--verbose] [-l|--level LEVEL]
+                  [-o|--output FILE] [FREE-ARGS]
 
 Available options:
-  -o, --output FILE        redirect output to file FILE
-  -l, --level LEVEL        the program will run on LEVEL level
-  -v, --verbose            verbose output
   -h, --help               print this help text
+  -v, --verbose            verbose output
+  -l, --level LEVEL        the program will run on LEVEL level
+  -o, --output FILE        redirect output to file FILE
 
 so that's how it works…
 free args:
@@ -163,26 +163,26 @@ sexy! Basically, we have defined all the options just like this:
 
 ```common-lisp
 (opts:define-opts
-  (:name :output
-   :description "redirect output to file FILE"
-   :short #\o
-   :long "output"
-   :arg-parser #'identity
-   :meta-var "FILE")
+  (:name :help
+   :description "print this help text"
+   :short #\h
+   :long "help")
+  (:name :verbose
+   :description "verbose output"
+   :short #\v
+   :long "verbose")
   (:name :level
    :description "the program will run on LEVEL level"
    :short #\l
    :long "level"
    :arg-parser #'parse-integer
    :meta-var "LEVEL")
-  (:name :verbose
-   :description "verbose output"
-   :short #\v
-   :long "verbose")
-  (:name :help
-   :description "print this help text"
-   :short #\h
-   :long "help"))
+  (:name :output
+   :description "redirect output to file FILE"
+   :short #\o
+   :long "output"
+   :arg-parser #'identity
+   :meta-var "FILE"))
 ```
 
 ## License

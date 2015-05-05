@@ -30,26 +30,26 @@
 ;;; DEFINE-OPTS macro.
 
 (opts:define-opts
-  (:name :output
-   :description "redirect output to file FILE"
-   :short #\o
-   :long "output"
-   :arg-parser #'identity
-   :meta-var "FILE")
+  (:name :help
+   :description "print this help text"
+   :short #\h
+   :long "help")
+  (:name :verbose
+   :description "verbose output"
+   :short #\v
+   :long "verbose")
   (:name :level
    :description "the program will run on LEVEL level"
    :short #\l
    :long "level"
    :arg-parser #'parse-integer
    :meta-var "LEVEL")
-  (:name :verbose
-   :description "verbose output"
-   :short #\v
-   :long "verbose")
-  (:name :help
-   :description "print this help text"
-   :short #\h
-   :long "help"))
+  (:name :output
+   :description "redirect output to file FILE"
+   :short #\o
+   :long "output"
+   :arg-parser #'identity
+   :meta-var "FILE"))
 
 ;;; OK, since command line options can be malformed we should use a handy
 ;;; Common Lisp feature: restarts. UNIX-OPTS gives us all we need to do so.
