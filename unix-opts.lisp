@@ -382,12 +382,12 @@ goes to STREAM."
              (terpri stream))))
     (print-part prefix)
     (terpri stream)
+    (when usage-of
+      (format stream "Usage: ~a~a~@[ ~a~]~%~%"
+              usage-of
+              (print-opts* (+ 7 (length usage-of)))
+              args))
     (when *options*
-      (when usage-of
-        (format stream "Usage: ~a~a~@[ ~a~]~%~%"
-                usage-of
-                (print-opts* (+ 7 (length usage-of)))
-                args))
       (format stream "Available options:~%")
       (print-opts stream))
     (print-part suffix)))
