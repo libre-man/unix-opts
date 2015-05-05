@@ -136,22 +136,22 @@ an argument, it's given but cannot be parsed by argument parser."))
   "Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
-:NAME -- keyword that will be included in list returned by GET-OPTS function
+:NAME — keyword that will be included in list returned by GET-OPTS function
 if actual option is supplied by user.
 
-:DESCRIPTION -- description of the option (it will be used in DESCRIBE
+:DESCRIPTION — description of the option (it will be used in DESCRIBE
 command). This argument is optional, but it's recommended to supply it.
 
-:SHORT -- single character - short variant of the option. You may omit this
+:SHORT — single character — short variant of the option. You may omit this
 argument if you supply :LONG variant of option.
 
-:LONG -- string, long variant of option. You may omit this argument if you
+:LONG — string, long variant of option. You may omit this argument if you
 supply :SHORT variant of option.
 
-:ARG-PARSER -- if actual option must take an argument, supply this argument,
+:ARG-PARSER — if actual option must take an argument, supply this argument,
 it must be a function that takes a string and parses it.
 
-:META-VAR -- if actual option requires an argument, this is how it will be
+:META-VAR — if actual option requires an argument, this is how it will be
 printed in option description."
   `(progn
      (setf *options* nil)
@@ -222,7 +222,14 @@ program as first elements of the list."
       (if (shortp opt)
           (values (subseq opt 1) #'short)
           (values (subseq opt 2) #'long))
-    (find opt *options* :key key :test #'string=)))
+    (flet ((prefix-p (x)
+             (let ((x (string x)))
+               (when (>= (length x) (length opt))
+                 (string= x opt :end1 (length opt))))))
+      (let ((matches (remove-if-not #'prefix-p *options* :key key)))
+        (if (cadr matches)
+            nil
+            (car matches))))))
 
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
@@ -290,8 +297,8 @@ instead)."
                  (if option
                      (let ((parser (arg-parser option)))
                        (if parser
-                           (setf poption-name (name option)
-                                 poption-raw  opt
+                           (setf poption-name   (name option)
+                                 poption-raw    opt
                                  poption-parser parser)
                            (push-option (name option) t)))
                      (restart-case
@@ -334,7 +341,7 @@ STREAM."
       (format stream "Available options:~%"))
     (dolist (opt *options*)
       (with-slots (short long description arg-parser meta-var) opt
-        (format stream "  ~27a~a~%"
+        (format stream "  ~25a~a~%"
                 (concatenate
                  'string
                  (if short (format nil "-~c" short) "")

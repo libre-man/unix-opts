@@ -45,24 +45,23 @@ define-opts &rest descriptions
 Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
-`:name` &ndash; keyword that will be included in list returned by `get-opts`
+`:name` — keyword that will be included in list returned by `get-opts`
 function if actual option is supplied by user.
 
-`:description` &ndash; description of the option (it will be used in
-`describe` command). This argument is optional, but it's recommended to
-supply it.
+`:description` — description of the option (it will be used in `describe`
+command). This argument is optional, but it's recommended to supply it.
 
-`:short` &ndash; single character, short variant of the option. You may omit
-this argument if you supply `:long` variant of option.
+`:short` — single character, short variant of the option. You may omit this
+argument if you supply `:long` variant of option.
 
-`:long` &ndash; string, long variant of option. You may omit this argument
-if you supply `:short` variant of option.
+`:long` — string, long variant of option. You may omit this argument if you
+supply `:short` variant of option.
 
-`:arg-parser` &ndash; if actual option must take an argument, supply this
+`:arg-parser` — if actual option must take an argument, supply this
 argument, it must be a function that takes a string and parses it.
 
-`:meta-var` &ndash; if actual option requires an argument, this is how it
-will be printed in option description.
+`:meta-var` — if actual option requires an argument, this is how it will be
+printed in option description.
 
 ----
 
@@ -126,18 +125,18 @@ file. Here is some tests:
 
 ```
 $ sh example.sh --help
-example - program to demonstrate unix-opts library
+example — program to demonstrate unix-opts library
 
 Available options:
-  -h, --help                 print this help text
-  -v, --verbose              verbose output
-  -l, --level LEVEL          the program will run on LEVEL level
-  -o, --output FILE          redirect output to file FILE
-so that's how it works...
+  -h, --help               print this help text
+  -v, --verbose            verbose output
+  -l, --level LEVEL        the program will run on LEVEL level
+  -o, --output FILE        redirect output to file FILE
+so that's how it works…
 
 free args:
 $ sh example.sh -v file1.txt file2.txt
-OK, running in verbose mode...
+OK, running in verbose mode…
 free args: file1.txt, file2.txt
 $ sh example.sh --level 10 --output foo.txt bar.txt
 I see you've supplied level option, you want 10 level!
@@ -151,7 +150,7 @@ warning: "--hoola-boola" option is unknown!
 free args: noola.txt
 $ sh example.sh -vgl=10
 warning: "-g" option is unknown!
-OK, running in verbose mode...
+OK, running in verbose mode…
 I see you've supplied level option, you want 10 level!
 free args:
 ```

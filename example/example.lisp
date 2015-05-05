@@ -82,10 +82,10 @@
   ;; logic to process them.
   (when-option (options :help)
     (opts:describe
-     :prefix "example - program to demonstrate unix-opts library"
-     :suffix "so that's how it works..."))
+     :prefix "example — program to demonstrate unix-opts library"
+     :suffix "so that's how it works…"))
   (when-option (options :verbose)
-    (format t "OK, running in verbose mode...~%"))
+    (format t "OK, running in verbose mode…~%"))
   (when-option (options :level)
     (format t "I see you've supplied level option, you want ~a level!~%" it))
   (when-option (options :output)
