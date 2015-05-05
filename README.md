@@ -114,8 +114,12 @@ describe &key prefix suffix stream
 
 Return string describing options of the program that were defined with
 `define-opts` macro previously. You can supply `prefix` and `suffix`
-arguments that will be printed before and after options respectively. Output
-goes to `stream` (default value is `*standard-output*`).
+arguments that will be printed before and after options respectively. If
+`usage-of` is supplied, it should be a string, name of the program for
+"Usage: " section. This section is only printed if this name is given. If
+your program takes arguments (apart from options), you can specify how to
+print them in "Usage: " section with `args` option (should be a string
+designator). Output goes to `stream` (default value is `*standard-output*`).
 
 ## Example
 
