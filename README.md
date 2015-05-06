@@ -109,7 +109,7 @@ string will be parsed instead).
 ----
 
 ```
-describe &key prefix suffix stream
+describe &key prefix suffix usage-of args stream
 ```
 
 Return string describing options of the program that were defined with
