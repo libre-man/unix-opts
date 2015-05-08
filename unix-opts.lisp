@@ -140,7 +140,7 @@ containing various parameters. Here we enumerate all allowed parameters:
 if actual option is supplied by user.
 
 :DESCRIPTION — description of the option (it will be used in DESCRIBE
-command). This argument is optional, but it's recommended to supply it.
+function). This argument is optional, but it's recommended to supply it.
 
 :SHORT — single character — short variant of the option. You may omit this
 argument if you supply :LONG variant of option.

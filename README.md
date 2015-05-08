@@ -49,7 +49,7 @@ containing various parameters. Here we enumerate all allowed parameters:
 function if actual option is supplied by user.
 
 `:description` — description of the option (it will be used in `describe`
-command). This argument is optional, but it's recommended to supply it.
+function). This argument is optional, but it's recommended to supply it.
 
 `:short` — single character, short variant of the option. You may omit this
 argument if you supply `:long` variant of option.
@@ -78,7 +78,7 @@ program as first elements of the list.
 get-opts &optional options
 ```
 
-Parse command line options. If `OPTIONS` is given, it should be a list to
+Parse command line options. If `options` is given, it should be a list to
 parse. If it's not given, the function will use `argv` function to get list
 of command line arguments. Return two values: list that contains keywords
 associated with command line options with `define-opts` macro, and list of
