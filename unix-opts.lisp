@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 ;;;
-;;; unix-opts — a minimalistic parser of command line options.
+;;; Unix-opts — a minimalistic parser of command line options.
 ;;;
 ;;; Copyright © 2015 Mark Karpov
 ;;;
@@ -47,7 +47,7 @@
     :initarg  :name
     :accessor name
     :documentation "keyword that will be included in list returned by
-GET-OPTS function if this option is given by user")
+`get-opts' function if this option is given by user")
    (description
     :initarg  :description
     :accessor description
@@ -84,7 +84,7 @@ particular option."))
   ()
   (:report (lambda (c s) (format s "unknown option: ~s" (option c))))
   (:documentation "This condition is thrown when parser encounters
-unknown (not previously defined with DEFINE-OPTS) option."))
+unknown (not previously defined with `define-opts') option."))
 
 (define-condition missing-arg (troublesome-option)
   ()
@@ -105,7 +105,7 @@ an argument, but there is no such argument given."))
 an argument, it's given but cannot be parsed by argument parser."))
 
 (defparameter *options* nil
-  "list of all defined options")
+  "List of all defined options.")
 
 (defun add-option (&rest args)
   "Register an option according to ARGS."
@@ -233,32 +233,32 @@ program as first elements of the list."
 
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
-parse. If it's not given, the function will use ARGV function to get list of
-command line arguments. Return two values: list that contains keywords
-associated with command line options with DEFINE-OPTS macro, and list of
-free arguments. If some option requires an argument, you can use GETF to
+parse. If it's not given, the function will use `argv' function to get list
+of command line arguments. Return two values: list that contains keywords
+associated with command line options with `define-opts' macro, and list of
+free arguments. If some option requires an argument, you can use `getf' to
 test presence of the option and get its argument if the option is present.
 
 The parser may signal various conditions, let's list them all specifying
 which restarts are available for every condition, and what kind of
 information the programmer can extract from the conditions.
 
-UNKNOWN-OPTION is thrown when parser encounters unknown (not previously
-defined with DEFINE-OPTS) option. Use OPTION reader to get name of the
-option (string). Available restarts: USE-VALUE (substitute the option and
-try again), SKIP-OPTION (ignore the option).
+`unknown-option' is thrown when parser encounters unknown (not previously
+defined with `define-opts') option. Use `option' reader to get name of the
+option (string). Available restarts: `use-value' (substitute the option and
+try again), `skip-option' (ignore the option).
 
-MISSING-ARG is thrown when some option wants an argument, but there is no
-such argument given. Use OPTION reader to get name of the
-option (string). Available restarts: USE-VALUE (supplied value will be
-used), SKIP-OPTION (ignore the option).
+`missing-arg' is thrown when some option wants an argument, but there is no
+such argument given. Use `option' reader to get name of the
+option (string). Available restarts: `use-value' (supplied value will be
+used), `skip-option' (ignore the option).
 
-ARG-PARSER-FAILED is thrown when some option wants an argument, it's given
-but cannot be parsed by argument parser. Use OPTION reader to get name of
-the option (string) and RAW-ARG to get raw string representing the argument
-before parsing. Available restarts: USE-VALUE (supplied value will be used),
-SKIP-OPTION (ignore the option), REPARSE-ARG (supplied string will be parsed
-instead)."
+`arg-parser-failed' is thrown when some option wants an argument, it's given
+but cannot be parsed by argument parser. Use `option' reader to get name of
+the option (string) and `raw-arg' to get raw string representing the
+argument before parsing. Available restarts: `use-value' (supplied value
+will be used), `skip-option' (ignore the option), `reparse-arg' (supplied
+string will be parsed instead)."
   (do ((tokens (mapcan #'split-short-opts
                        (mapcan #'split-on-=
                                (or options (cdr (argv)))))
@@ -344,7 +344,7 @@ with description."
 (defun print-opts* (margin)
   "Return a string containing info about defined options. All options are
 displayed on one line, although this function tries to print it elegantly if
-it gets too long."
+it gets too long. MARGIN specifies margin."
   (let ((fill-col (- 80 margin))
         (i 0)
         (last-newline 0))
@@ -369,7 +369,7 @@ it gets too long."
 
 (defun describe (&key prefix suffix usage-of args (stream *standard-output*))
   "Return string describing options of the program that were defined with
-DEFINE-OPTS macro previously. You can supply PREFIX and SUFFIX arguments
+`define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
 supplied, it should be a string, name of the program for \"Usage: \"
 section. This section is only printed if this name is given. If your program

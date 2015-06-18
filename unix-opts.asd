@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 ;;;
-;;; ASDF system definition for unix-opts — a minimalistic parser of command
+;;; ASDF system definition for Unix-opts — a minimalistic parser of command
 ;;; line options.
 ;;;
 ;;; Copyright © 2015 Mark Karpov

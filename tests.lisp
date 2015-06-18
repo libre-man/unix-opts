@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 ;;;
-;;; This is some tests for unix-opts library.
+;;; This is some tests for Unix-opts library.
 ;;;
 ;;; Copyright © 2015 Mark Karpov
 ;;;
@@ -73,7 +73,7 @@ aspects of the tests."
 
 (defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed)
   "Parse OPTS, return results and collect some data in special
-variables. Keyword arguments allow to set arguments for INVOKE-RESTART
+variables. Keyword arguments allow to set arguments for `invoke-restart'
 function. It's recommended to supply them all if you don't want to end in
 the debugger."
   (reset-state)
@@ -98,7 +98,7 @@ the debugger."
     (finish-collecting)))
 
 (defun run-tests ()
-  "Run UNIX-OPTS tests. Signal failure if any test fails and return NIL
+  "Run Unix-opts tests. Signal failure if any test fails and return NIL
 otherwise."
   (multiple-value-bind (options free-args)
       (parse-opts '("--grab-int" "10" "--rere" "11" "-s" "-a" "foo.txt")

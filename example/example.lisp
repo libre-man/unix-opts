@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 ;;;
-;;; This is example of unix-opts, a minimalistic parser of command line
+;;; This is example of Unix-opts, a minimalistic parser of command line
 ;;; options.
 ;;;
 ;;; Copyright © 2015 Mark Karpov
@@ -52,7 +52,7 @@
    :meta-var "FILE"))
 
 ;;; OK, since command line options can be malformed we should use a handy
-;;; Common Lisp feature: restarts. UNIX-OPTS gives us all we need to do so.
+;;; Common Lisp feature: restarts. Unix-opts gives us all we need to do so.
 ;;; Here we define function that will print a warning and ignore
 ;;; unknown-option. Several restarts (behaviors) are available for every
 ;;; exception that UNIX-OPTS can throw. See documentation for GET-OPTS
