@@ -27,7 +27,7 @@
 (asdf:load-system :unix-opts)
 
 ;;; First of all, we need to define command line options. We do this with
-;;; DEFINE-OPTS macro.
+;;; `define-opts' macro.
 
 (opts:define-opts
   (:name :help
@@ -55,7 +55,7 @@
 ;;; Common Lisp feature: restarts. Unix-opts gives us all we need to do so.
 ;;; Here we define function that will print a warning and ignore
 ;;; unknown-option. Several restarts (behaviors) are available for every
-;;; exception that UNIX-OPTS can throw. See documentation for GET-OPTS
+;;; exception that Unix-opts can throw. See documentation for `get-opts'
 ;;; function for more information.
 
 (defun unknown-option (condition)
