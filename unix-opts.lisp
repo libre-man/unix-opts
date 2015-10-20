@@ -132,7 +132,7 @@ an argument, it's given but cannot be parsed by argument parser."))
                          :meta-var    meta-var)
           *options*)))
 
-(defmacro define-opts (&rest descriptions)
+(defmacro define-opts (&body descriptions)
   "Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
