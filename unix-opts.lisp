@@ -335,13 +335,12 @@ applied to every single line."
                  (concatenate 'string (string #\newline) str)
                  str)))
     (with-output-to-string (s)
-      (map 'string
+      (map nil
            (lambda (x)
              (princ x s)
              (when (char= x #\newline)
                (dotimes (i padding)
-                 (princ #\space s)))
-             x)
+                 (princ #\space s))))
            str))))
 
 (defun print-opts (&optional (stream *standard-output*))
