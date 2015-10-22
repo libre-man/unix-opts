@@ -326,19 +326,42 @@ string will be parsed instead)."
                (process-option item))
               (t (push item free-args)))))))
 
+(defun add-text-padding (str &key padding newline)
+  "Add padding to text STR. Every line except for the first one, will be
+prefixed with PADDING spaces. If NEWLINE is non-NIL, newline character will
+be prepended to the text making it start on the next line with padding
+applied to every single line."
+  (let ((str (if newline
+                 (concatenate 'string (string #\newline) str)
+                 str)))
+    (with-output-to-string (s)
+      (map 'string
+           (lambda (x)
+             (princ x s)
+             (when (char= x #\newline)
+               (dotimes (i padding)
+                 (princ #\space s)))
+             x)
+           str))))
+
 (defun print-opts (&optional (stream *standard-output*))
   "Print info about defined options to STREAM. Every option get its own line
 with description."
   (dolist (opt *options*)
     (with-slots (short long description arg-parser meta-var) opt
-      (format stream "  ~25a~a~%"
-              (concatenate
-               'string
-               (if short (format nil "-~c" short) "")
-               (if (and short long) ", " "")
-               (if long  (format nil "--~a" long) "")
-               (if arg-parser (format nil " ~a" meta-var) ""))
-              description)))
+      (let ((opts-and-meta
+             (concatenate
+              'string
+              (if short (format nil "-~c" short) "")
+              (if (and short long) ", " "")
+              (if long  (format nil "--~a" long) "")
+              (if arg-parser (format nil " ~a" meta-var) ""))))
+        (format stream "  ~25a~a~%"
+                opts-and-meta
+                (add-text-padding
+                 description
+                 :padding 27
+                 :newline (>= (length opts-and-meta) 25))))))
   (terpri stream))
 
 (defun print-opts* (margin)
