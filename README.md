@@ -1,6 +1,9 @@
 # Unix-style command line options parser
 
-This is a minimalistic parser of command line options. Main advantage of
+[![License MIT](https://img.shields.io/badge/license-MIT-green.svg)](http://opensource.org/licenses/MIT)
+[![Quicklisp](http://quickdocs.org/badge/unix-opts.svg)](http://quickdocs.org/unix-opts/)
+
+This is a minimalistic parser of command line options. The main advantage of
 this library is ability to concisely define command line options once and
 then use this definition for parsing and extraction of command line
 arguments, as well as printing description of command line options (you get
@@ -8,14 +11,16 @@ arguments, as well as printing description of command line options (you get
 `unix-opts` doesn't depend on anything and allows to precisely control
 behavior of the parser via Common Lisp restarts.
 
+Inspired by Haskell's `optparse-applicative` and Python's `argparse`.
+
 ## Installation
 
 Copy files of this library in any place where ASDF can find them. Then you
 can use it in system definitions and ASDF will take care of the rest.
 
-Via Quicklisp:
+Via Quicklisp (recommended):
 
-```
+```common-lisp
 (ql:quickload "unix-opts")
 ```
 
