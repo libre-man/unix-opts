@@ -166,7 +166,7 @@ program as first elements of the list."
   #+abcl      ext:*command-line-argument-list*
   #+allegro   sys:command-line-arguments
   #+:ccl      ccl:*command-line-argument-list*
-  #+clisp     ext:argv
+  #+clisp     (cons *load-truename* ext:*args*)
   #+clozure   ccl::command-line-arguments
   #+cmu       extensions:*command-line-words*
   #+ecl       (ext:command-args)
