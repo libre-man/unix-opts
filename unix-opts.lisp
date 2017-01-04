@@ -199,7 +199,8 @@ program as first elements of the list."
 (defun shortp (opt)
   "Predicate that checks if OPT is a short option."
   (and (= (length opt) 2)
-       (char=  #\- (char opt 0))))
+       (char=  #\- (char opt 0))
+       (char/= #\- (char opt 1))))
 
 (defun longp (opt)
   "Predicate that checks if OPT is a long option."
@@ -322,6 +323,10 @@ string will be parsed instead)."
                    (setf poption-name nil)
                    (when item
                      (process-option item)))))
+              ((string= item "--")
+               (dolist (tok (cdr tokens))
+                 (push tok free-args))
+               (setf tokens nil))
               ((optionp item)
                (process-option item))
               (t (push item free-args)))))))
