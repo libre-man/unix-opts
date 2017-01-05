@@ -24,7 +24,7 @@
 ;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (asdf:defsystem :unix-opts-tests
-  :version      "0.1.3"
+  :version      "0.1.4"
   :description  "tests for unix-opts-tests"
   :author       "Mark Karpov"
   :license      "MIT"

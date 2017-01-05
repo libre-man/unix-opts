@@ -25,7 +25,7 @@
 ;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (asdf:defsystem :unix-opts
-  :version      "0.1.3"
+  :version      "0.1.4"
   :description  "minimalistic parser of command line arguments"
   :author       "Mark Karpov"
   :license      "MIT"
