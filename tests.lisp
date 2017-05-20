@@ -72,10 +72,9 @@ aspects of the tests."
 ;;; The tests themselves.
 
 (defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed)
-  "Parse OPTS, return results and collect some data in special
-variables. Keyword arguments allow to set arguments for `invoke-restart'
-function. It's recommended to supply them all if you don't want to end in
-the debugger."
+  "Parse OPTS, return results and collect some data in special variables.
+Keyword arguments allow to set arguments for `invoke-restart' function. It's
+recommended to supply them all if you don't want to end in the debugger."
   (reset-state)
   (multiple-value-prog1
       (handler-bind

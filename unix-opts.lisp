@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 ;;;
-;;; Unix-opts — a minimalistic parser of command line options.
+;;; Unix-opts—a minimalistic parser of command line options.
 ;;;
 ;;; Copyright © 2015–2017 Mark Karpov
 ;;;
@@ -136,22 +136,22 @@ an argument, it's given but cannot be parsed by argument parser."))
   "Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
-:NAME — keyword that will be included in list returned by GET-OPTS function
-if actual option is supplied by user.
+:NAME—keyword that will be included in list returned by GET-OPTS function if
+actual option is supplied by user.
 
-:DESCRIPTION — description of the option (it will be used in DESCRIBE
+:DESCRIPTION—description of the option (it will be used in DESCRIBE
 function). This argument is optional, but it's recommended to supply it.
 
-:SHORT — single character — short variant of the option. You may omit this
+:SHORT—single character, short variant of the option. You may omit this
 argument if you supply :LONG variant of option.
 
-:LONG — string, long variant of option. You may omit this argument if you
+:LONG—string, long variant of option. You may omit this argument if you
 supply :SHORT variant of option.
 
-:ARG-PARSER — if actual option must take an argument, supply this argument,
-it must be a function that takes a string and parses it.
+:ARG-PARSER—if actual option must take an argument, supply this argument, it
+must be a function that takes a string and parses it.
 
-:META-VAR — if actual option requires an argument, this is how it will be
+:META-VAR—if actual option requires an argument, this is how it will be
 printed in option description."
   `(progn
      (setf *options* nil)
@@ -240,23 +240,23 @@ associated with command line options with `define-opts' macro, and list of
 free arguments. If some option requires an argument, you can use `getf' to
 test presence of the option and get its argument if the option is present.
 
-The parser may signal various conditions, let's list them all specifying
+The parser may signal various conditions. Let's list them all specifying
 which restarts are available for every condition, and what kind of
 information the programmer can extract from the conditions.
 
 `unknown-option' is thrown when parser encounters unknown (not previously
-defined with `define-opts') option. Use `option' reader to get name of the
-option (string). Available restarts: `use-value' (substitute the option and
-try again), `skip-option' (ignore the option).
+defined with `define-opts') option. Use the `option' reader to get name of
+the option (string). Available restarts: `use-value' (substitute the option
+and try again), `skip-option' (ignore the option).
 
 `missing-arg' is thrown when some option wants an argument, but there is no
-such argument given. Use `option' reader to get name of the
+such argument given. Use the `option' reader to get name of the
 option (string). Available restarts: `use-value' (supplied value will be
 used), `skip-option' (ignore the option).
 
 `arg-parser-failed' is thrown when some option wants an argument, it's given
-but cannot be parsed by argument parser. Use `option' reader to get name of
-the option (string) and `raw-arg' to get raw string representing the
+but cannot be parsed by argument parser. Use the `option' reader to get name
+of the option (string) and `raw-arg' to get raw string representing the
 argument before parsing. Available restarts: `use-value' (supplied value
 will be used), `skip-option' (ignore the option), `reparse-arg' (supplied
 string will be parsed instead)."

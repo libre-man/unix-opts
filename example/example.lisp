@@ -53,7 +53,7 @@
 
 ;;; OK, since command line options can be malformed we should use a handy
 ;;; Common Lisp feature: restarts. Unix-opts gives us all we need to do so.
-;;; Here we define function that will print a warning and ignore
+;;; Here we define a function that will print a warning and ignore
 ;;; unknown-option. Several restarts (behaviors) are available for every
 ;;; exception that Unix-opts can throw. See documentation for `get-opts'
 ;;; function for more information.
@@ -82,7 +82,7 @@
   ;; logic to process them.
   (when-option (options :help)
     (opts:describe
-     :prefix "example — program to demonstrate unix-opts library"
+     :prefix "example—program to demonstrate unix-opts library"
      :suffix "so that's how it works…"
      :usage-of "example.sh"
      :args     "[FREE-ARGS]"))

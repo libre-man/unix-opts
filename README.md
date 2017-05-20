@@ -4,7 +4,7 @@
 [![Quicklisp](http://quickdocs.org/badge/unix-opts.svg)](http://quickdocs.org/unix-opts/)
 
 This is a minimalistic parser of command line options. The main advantage of
-this library is ability to concisely define command line options once and
+the library is the ability to concisely define command line options once and
 then use this definition for parsing and extraction of command line
 arguments, as well as printing description of command line options (you get
 `--help` for free). This way you don't need to repeat yourself. Also,
@@ -50,22 +50,22 @@ define-opts &rest descriptions
 Define command line options. Arguments of this macro must be plists
 containing various parameters. Here we enumerate all allowed parameters:
 
-`:name` — keyword that will be included in list returned by `get-opts`
+`:name`—keyword that will be included in list returned by `get-opts`
 function if actual option is supplied by user.
 
-`:description` — description of the option (it will be used in `describe`
+`:description`—description of the option (it will be used in `describe`
 function). This argument is optional, but it's recommended to supply it.
 
-`:short` — single character, short variant of the option. You may omit this
+`:short`—single character, short variant of the option. You may omit this
 argument if you supply `:long` variant of option.
 
-`:long` — string, long variant of option. You may omit this argument if you
+`:long`—string, long variant of option. You may omit this argument if you
 supply `:short` variant of option.
 
-`:arg-parser` — if actual option must take an argument, supply this
-argument, it must be a function that takes a string and parses it.
+`:arg-parser`—if actual option must take an argument, supply this argument,
+it must be a function that takes a string and parses it.
 
-`:meta-var` — if actual option requires an argument, this is how it will be
+`:meta-var`—if actual option requires an argument, this is how it will be
 printed in option description.
 
 ----
@@ -84,29 +84,30 @@ get-opts &optional options
 ```
 
 Parse command line options. If `options` is given, it should be a list to
-parse. If it's not given, the function will use `argv` function to get list
-of command line arguments. Return two values: list that contains keywords
-associated with command line options with `define-opts` macro, and list of
-free arguments. If some option requires an argument, you can use `getf` to
-test presence of the option and get its argument if the option is present.
+parse. If it's not given, the function will use the `argv` function to get
+list of command line arguments. Return two values: list that contains
+keywords associated with command line options with `define-opts` macro, and
+list of free arguments. If some option requires an argument, you can use
+`getf` to test presence of the option and get its argument if the option is
+present.
 
-The parser may signal various conditions, let's list them all specifying
+The parser may signal various conditions. Let's list them all specifying
 which restarts are available for every condition, and what kind of
 information the programmer can extract from the conditions.
 
 `unknown-option` is thrown when parser encounters unknown (not previously
-defined with `define-opts`) option. Use `option` reader to get name of the
-option (string). Available restarts: `use-value` (substitute the option and
-try again), `skip-option` (ignore the option).
+defined with `define-opts`) option. Use the `option` reader to get name of
+the option (string). Available restarts: `use-value` (substitute the option
+and try again), `skip-option` (ignore the option).
 
 `missing-arg` is thrown when some option wants an argument, but there is no
-such argument given. Use `option` reader to get name of the option
+such argument given. Use the `option` reader to get name of the option
 (string). Available restarts: `use-value` (supplied value will be used),
 `skip-option` (ignore the option).
 
 `arg-parser-failed` is thrown when some option wants an argument, it's given
-but cannot be parsed by argument parser. Use `option` reader to get name of
-the option (string) and `raw-arg` to get raw string representing the
+but cannot be parsed by argument parser. Use the `option` reader to get name
+of the option (string) and `raw-arg` to get raw string representing the
 argument before parsing. Available restarts: `use-value` (supplied value
 will be used), `skip-option` (ignore the option), `reparse-arg` (supplied
 string will be parsed instead).
@@ -134,7 +135,7 @@ file. Here is some tests:
 
 ```
 $ sh example.sh --help
-example — program to demonstrate unix-opts library
+example—program to demonstrate unix-opts library
 
 Usage: example.sh [-h|--help] [-v|--verbose] [-l|--level LEVEL]
                   [-o|--output FILE] [FREE-ARGS]
