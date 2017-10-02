@@ -13,6 +13,8 @@ behavior of the parser via Common Lisp restarts.
 
 Inspired by Haskell's `optparse-applicative` and Python's `argparse`.
 
+It is portable accross many implementations (10 and counting).
+
 ## Installation
 
 Copy files of this library in any place where ASDF can find them. Then you
@@ -23,6 +25,9 @@ Via Quicklisp (recommended):
 ```common-lisp
 (ql:quickload "unix-opts")
 ```
+
+Now you can use its shorter nickname `opts`.
+
 
 ## Description
 
@@ -194,6 +199,24 @@ sexy! Basically, we have defined all the options just like this:
    :arg-parser #'identity
    :meta-var "FILE"))
 ```
+
+and we read them like so:
+
+```
+(opts:get-opts)
+```
+
+which returns two values, a list of parsed options and the remaining
+arguments:
+
+```
+(multiple-value-bind (options free-args)
+    (opts:get-opts)
+  (if (getf options :verbose)
+      ...
+```
+
+See the example for helpers and how to handle malformed or incomplete arguments.
 
 ## License
 
