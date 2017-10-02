@@ -4,6 +4,8 @@
 
 * Added the portable `exit` function.
 
+* Cosmetic improvements in the `README.md` file.
+
 ## Unix-opts 0.1.2
 
 * When combination of options and meta variable is too long, description

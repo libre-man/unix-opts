@@ -161,8 +161,8 @@ printed in option description."
      (values)))
 
 (defun argv ()
-  "Return list of program's arguments, including command used to execute the
-program as first elements of the list."
+  "Return a list of program's arguments, including command used to execute
+the program as first elements of the list. Portable across implementations."
   #+abcl      ext:*command-line-argument-list*
   #+allegro   sys:command-line-arguments
   #+:ccl      ccl:*command-line-argument-list*
@@ -235,9 +235,15 @@ program as first elements of the list."
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use `argv' function to get list
-of command line arguments. Return two values: list that contains keywords
-associated with command line options with `define-opts' macro, and list of
-free arguments. If some option requires an argument, you can use `getf' to
+of command line arguments.
+
+Return two values:
+
+* a list that contains keywords associated with command line options with
+  `define-opts' macro, and
+* a list of free arguments.
+
+If some option requires an argument, you can use `getf' to
 test presence of the option and get its argument if the option is present.
 
 The parser may signal various conditions. Let's list them all specifying
