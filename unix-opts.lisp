@@ -162,7 +162,7 @@ printed in option description."
 
 (defun argv ()
   "Return list of program's arguments, including command used to execute the
-program as first elements of the list."
+program as first elements of the list. Portable accross implementations."
   #+abcl      ext:*command-line-argument-list*
   #+allegro   sys:command-line-arguments
   #+:ccl      ccl:*command-line-argument-list*
@@ -235,26 +235,35 @@ program as first elements of the list."
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use `argv' function to get list
-of command line arguments. Return two values: list that contains keywords
-associated with command line options with `define-opts' macro, and list of
-free arguments. If some option requires an argument, you can use `getf' to
+of command line arguments.
+
+Return two values:
+- a list that contains keywords
+associated with command line options with `define-opts' macro, and
+- a list of
+free arguments.
+
+If some option requires an argument, you can use `getf' to
 test presence of the option and get its argument if the option is present.
+
+Handling malformed options
+--------------------------
 
 The parser may signal various conditions. Let's list them all specifying
 which restarts are available for every condition, and what kind of
 information the programmer can extract from the conditions.
 
-`unknown-option' is thrown when parser encounters unknown (not previously
+- `unknown-option' is thrown when parser encounters unknown (not previously
 defined with `define-opts') option. Use the `option' reader to get name of
 the option (string). Available restarts: `use-value' (substitute the option
 and try again), `skip-option' (ignore the option).
 
-`missing-arg' is thrown when some option wants an argument, but there is no
+- `missing-arg' is thrown when some option wants an argument, but there is no
 such argument given. Use the `option' reader to get name of the
 option (string). Available restarts: `use-value' (supplied value will be
 used), `skip-option' (ignore the option).
 
-`arg-parser-failed' is thrown when some option wants an argument, it's given
+- `arg-parser-failed' is thrown when some option wants an argument, it's given
 but cannot be parsed by argument parser. Use the `option' reader to get name
 of the option (string) and `raw-arg' to get raw string representing the
 argument before parsing. Available restarts: `use-value' (supplied value
