@@ -104,6 +104,11 @@ your program takes arguments (apart from options), you can specify how to
 print them in "Usage: " section with an `args` option (should be a string
 designator). Output goes to `stream` (default value is `*standard-output*`).
 
+### `(exit &optional (status 0))`
+
+Portable way to exit and return `status` (0 by default).
+
+
 Handling malformed options
 --------------------------
 
@@ -170,8 +175,11 @@ list of parsed options and the remaining arguments, so:
 ```
 (multiple-value-bind (options free-args)
     (opts:get-opts)
-  (if (getf options :verbose)
-      ...
+  (if (getf options :help)
+      (progn
+        (describe)
+        (exit)))
+   ...
 ```
 
 See the example for helpers and how to handle malformed or incomplete arguments.
