@@ -114,6 +114,13 @@ your program takes arguments (apart from options), you can specify how to
 print them in "Usage: " section with an `args` option (should be a string
 designator). Output goes to `stream` (default value is `*standard-output*`).
 
+```
+exit &optional (status 0)
+```
+
+Exit the program returning `status`.
+
+
 Handling malformed options
 --------------------------
 
@@ -183,6 +190,10 @@ list of parsed options and the remaining arguments, so:
   (if (getf options :verbose)
       ...
 ```
+
+----
+
+## Example
 
 See the example for helpers and how to handle malformed or incomplete arguments.
 

@@ -1,5 +1,9 @@
 # History of changes
 
+## Unix-opts 0.1.5
+
+* Added the portable `exit` function.
+
 ## Unix-opts 0.1.2
 
 * When combination of options and meta variable is too long, description
