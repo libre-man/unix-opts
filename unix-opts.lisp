@@ -418,3 +418,14 @@ goes to STREAM."
       (format stream "Available options:~%")
       (print-opts stream))
     (print-part suffix)))
+
+(defun exit (&optional (status 0))
+  "Exit the program returning `status'."
+  #+sbcl      (sb-ext:exit :code status)
+  #+cmu       (unix:unix-exit status)
+  #+ccl       (ccl:quit status)
+  #+ecl       (ext:quit status)
+  #+clisp     (ext:exit status)
+  #+abcl      (extensions:exit :status status)
+  #+allegro   (excl:exit status :quiet t)
+  #+lispworks (lispworks:quit :status status))

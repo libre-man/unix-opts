@@ -127,6 +127,14 @@ your program takes arguments (apart from options), you can specify how to
 print them in "Usage: " section with `args` option (should be a string
 designator). Output goes to `stream` (default value is `*standard-output*`).
 
+----
+
+```
+exit &optional (status 0)
+```
+
+Exit the program returning `status`.
+
 ## Example
 
 Go to `example` directory. Now, you can use `example.lisp` file to see if
