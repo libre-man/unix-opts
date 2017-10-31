@@ -40,6 +40,7 @@
    :long "verbose")
   (:name :level
    :description "the program will run on LEVEL level"
+   :required t
    :short #\l
    :long "level"
    :arg-parser #'parse-integer
@@ -77,20 +78,23 @@
       (opts:arg-parser-failed (condition)
         (format t "fatal: cannot parse ~s as argument of ~s~%"
                 (opts:raw-arg condition)
-                (opts:option condition))))
+                (opts:option condition)))
+      (opts:missing-required-option (con)
+        (format t "fatal: ~a~%" con)
+        (opts:exit 1)))
   ;; Here all options are checked independently, it's trivial to code any
   ;; logic to process them.
   (when-option (options :help)
-    (opts:describe
-     :prefix "example—program to demonstrate unix-opts library"
-     :suffix "so that's how it works…"
-     :usage-of "example.sh"
-     :args     "[FREE-ARGS]"))
+               (opts:describe
+                :prefix "example—program to demonstrate unix-opts library"
+                :suffix "so that's how it works…"
+                :usage-of "example.sh"
+                :args     "[FREE-ARGS]"))
   (when-option (options :verbose)
-    (format t "OK, running in verbose mode…~%"))
+               (format t "OK, running in verbose mode…~%"))
   (when-option (options :level)
-    (format t "I see you've supplied level option, you want ~a level!~%" it))
+               (format t "I see you've supplied level option, you want ~a level!~%" it))
   (when-option (options :output)
-    (format t "I see you want to output the stuff to ~s!~%"
-            (getf options :output)))
+               (format t "I see you want to output the stuff to ~s!~%"
+                       (getf options :output)))
   (format t "free args: ~{~a~^, ~}~%" free-args))

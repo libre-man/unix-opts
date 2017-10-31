@@ -30,6 +30,7 @@
    :description "grab integer INT"
    :short #\i
    :long "grab-int"
+   :required t
    :arg-parser #'parse-integer
    :meta-var "INT")
   (:name :grab-str
@@ -56,22 +57,27 @@
 (defparameter *malformed-arguments* nil
   "Here we collect malformed arguments.")
 
+(defparameter *missing-required-options*
+  "Here we collect missing required options")
+
 (defun reset-state ()
   "Reset some special variables that are used to collect data about some
 aspects of the tests."
-  (setf *unknown-options*     nil
-        *missing-arg-options* nil
-        *malformed-arguments* nil))
+  (setf *unknown-options*          nil
+        *missing-arg-options*      nil
+        *missing-required-options* nil
+        *malformed-arguments*      nil))
 
 (defun finish-collecting ()
   "Call this after parsing."
   (setf *unknown-options*     (nreverse *unknown-options*)
+        *missing-required-options* (nreverse *missing-required-options*)
         *missing-arg-options* (nreverse *missing-arg-options*)
         *malformed-arguments* (nreverse *malformed-arguments*)))
 
 ;;; The tests themselves.
 
-(defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed)
+(defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed missing-required)
   "Parse OPTS, return results and collect some data in special variables.
 Keyword arguments allow to set arguments for `invoke-restart' function. It's
 recommended to supply them all if you don't want to end in the debugger."
@@ -79,20 +85,25 @@ recommended to supply them all if you don't want to end in the debugger."
   (multiple-value-prog1
       (handler-bind
           ((unknown-option
-            (lambda (c)
-              (push (option c) *unknown-options*)
-              (when unknown-option
-                (apply #'invoke-restart unknown-option))))
+             (lambda (c)
+               (push (option c) *unknown-options*)
+               (when unknown-option
+                 (apply #'invoke-restart unknown-option))))
            (missing-arg
-            (lambda (c)
-              (push (option c) *missing-arg-options*)
-              (when missing-arg
-                (apply #'invoke-restart missing-arg))))
+             (lambda (c)
+               (push (option c) *missing-arg-options*)
+               (when missing-arg
+                 (apply #'invoke-restart missing-arg))))
+           (missing-required-option
+             (lambda (c)
+               (push (mapcar #'name (missing-options c)) *missing-required-options*)
+               (when missing-required
+                 (apply #'invoke-restart missing-required))))
            (arg-parser-failed
-            (lambda (c)
-              (push (raw-arg c) *malformed-arguments*)
-              (when arg-parser-failed
-                (apply #'invoke-restart arg-parser-failed)))))
+             (lambda (c)
+               (push (raw-arg c) *malformed-arguments*)
+               (when arg-parser-failed
+                 (apply #'invoke-restart arg-parser-failed)))))
         (get-opts opts))
     (finish-collecting)))
 
@@ -157,6 +168,30 @@ otherwise."
                   :arg-parser-failed '(skip-option))
     (assert (equalp options '(:grab-int 15)))
     (assert (equalp free-args '("--grab-int" "16")))
+    (assert (equalp *unknown-options* nil))
+    (assert (equalp *missing-arg-options* nil))
+    (assert (equalp *malformed-arguments* nil)))
+  (multiple-value-bind (options free-args)
+      (parse-opts '("-s" "5")
+                  :unknown-option    '(skip-option)
+                  :missing-arg       '(skip-option)
+                  :missing-required  '(skip-option)
+                  :arg-parser-failed '(skip-option))
+    (assert (equalp options '(:grab-str "5")))
+    (assert (equalp free-args '()))
+    (assert (equalp *missing-required-options* '((:grab-int))))
+    (assert (equalp *unknown-options* nil))
+    (assert (equalp *missing-arg-options* nil))
+    (assert (equalp *malformed-arguments* nil)))
+  (multiple-value-bind (options free-args)
+      (parse-opts '("-s" "5")
+                  :unknown-option    '(skip-option)
+                  :missing-arg       '(skip-option)
+                  :missing-required  '(use-value (15))
+                  :arg-parser-failed '(skip-option))
+    (assert (equalp options '(:grab-str "5" :grab-int 15)))
+    (assert (equalp free-args '()))
+    (assert (equalp *missing-required-options* '((:grab-int))))
     (assert (equalp *unknown-options* nil))
     (assert (equalp *missing-arg-options* nil))
     (assert (equalp *malformed-arguments* nil))))
