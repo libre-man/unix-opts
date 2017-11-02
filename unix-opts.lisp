@@ -342,16 +342,15 @@ string will be parsed instead)."
 prefixed with PADDING spaces. If NEWLINE is non-NIL, newline character will
 be prepended to the text making it start on the next line with padding
 applied to every single line."
-  (let ((str (if newline
-                 (concatenate 'string (string #\newline) str)
-                 str)))
+  (let ((pad (make-string padding :initial-element #\Space)))
     (with-output-to-string (s)
+      (when newline
+        (format s "~&~a" pad))
       (map nil
            (lambda (x)
-             (princ x s)
-             (when (char= x #\newline)
-               (dotimes (i padding)
-                 (princ #\space s))))
+             (write-char x s)
+             (when (char= x #\Newline)
+               (write pad :stream s :escape nil)))
            str))))
 
 (defun print-opts (&optional (stream *standard-output*))
