@@ -29,10 +29,13 @@
   (:export    #:unknown-option
               #:missing-arg
               #:arg-parser-failed
+              #:missing-required-option
               #:use-value
               #:skip-option
               #:reparse-arg
               #:option
+              #:missing-options
+              #:exit
               #:raw-arg
               #:define-opts
               #:argv
@@ -60,6 +63,11 @@
     :initarg  :long
     :accessor long
     :documentation "NIL or string - long variant of the option")
+   (required
+    :initarg :required
+    :accessor required
+    :initform nil
+    :documentation "If not NIL this argument is required.")
    (arg-parser
     :initarg  :arg-parser
     :accessor arg-parser
@@ -92,6 +100,22 @@ unknown (not previously defined with `define-opts') option."))
   (:documentation "This condition is thrown when some option OPTION wants
 an argument, but there is no such argument given."))
 
+(define-condition missing-required-option (troublesome-option)
+  ((missing-options
+    :initarg :missing-options
+    :reader missing-options))
+  (:report (lambda (c s)
+             (format s "Missing required options: ~{\"~a\"~^, ~}"
+                     (mapcar (lambda (opt)
+                               (with-slots (short long name) opt
+                                 (apply #'format nil
+                                        (cond
+                                          (long (list "--~A" long))
+                                          (short (list "-~A" short))
+                                          (t (list "~A" name))))))
+                             (missing-options c)))))
+  (:documentation "This condition is thrown when required options are missing."))
+
 (define-condition arg-parser-failed (troublesome-option)
   ((raw-arg
     :initarg :raw-arg
@@ -114,6 +138,7 @@ an argument, it's given but cannot be parsed by argument parser."))
         (short       (getf args :short))
         (long        (getf args :long))
         (arg-parser  (getf args :arg-parser))
+        (required    (getf args :required))
         (meta-var    (getf args :meta-var "ARG")))
     (unless (or short long)
       (error "at least one form of the option must be provided"))
@@ -123,11 +148,13 @@ an argument, it's given but cannot be parsed by argument parser."))
     (check-type long        (or null string))
     (check-type arg-parser  (or null function))
     (check-type meta-var    string)
+    (check-type required    boolean)
     (push (make-instance 'option
                          :name        name
                          :description description
                          :short       short
                          :long        long
+                         :required    required
                          :arg-parser  arg-parser
                          :meta-var    meta-var)
           *options*)))
@@ -265,11 +292,21 @@ but cannot be parsed by argument parser. Use the `option' reader to get name
 of the option (string) and `raw-arg' to get raw string representing the
 argument before parsing. Available restarts: `use-value' (supplied value
 will be used), `skip-option' (ignore the option), `reparse-arg' (supplied
-string will be parsed instead)."
+string will be parsed instead).
+
+`missing-required-options' is thrown when some option was required and it was
+not given. Use the `missing-options' reader to get the list of options that are
+missing. Available restarts: `use-value' (supplied list of values will be used),
+`skip-option' (ignore all these options, effectively binding them to `nil')"
   (do ((tokens (mapcan #'split-short-opts
                        (mapcan #'split-on-=
                                (or options (cdr (argv)))))
                (cdr tokens))
+       (required (loop :with table = (make-hash-table)
+                       :for option :in *options*
+                       :when (required option)
+                         :do (setf (gethash (name option) table) option)
+                       :finally (return table)))
        poption-name
        poption-raw
        poption-parser
@@ -277,8 +314,21 @@ string will be parsed instead)."
        free-args)
       ((and (null tokens)
             (null poption-name))
-       (values (nreverse options)
-               (nreverse free-args)))
+       (progn
+         (when (/= (hash-table-count required) 0)
+           (let ((missing (loop :for val :being :the :hash-values :of required
+                                :collect val)))
+             (restart-case
+                 (error 'missing-required-option
+                        :missing-options missing)
+               (skip-option ())
+               (use-value (values)
+                 (loop :for option :in missing
+                       :for value :in values
+                       :do (push (name option) options)
+                       :do (push value options))))))
+         (values (nreverse options)
+                 (nreverse free-args))))
     (labels ((push-option (name value)
                (push name options)
                (push value options)
@@ -303,6 +353,7 @@ string will be parsed instead)."
                (let ((option (find-option opt)))
                  (if option
                      (let ((parser (arg-parser option)))
+                       (remhash (name option) required)
                        (if parser
                            (setf poption-name   (name option)
                                  poption-raw    opt
@@ -357,14 +408,15 @@ applied to every single line."
   "Print info about defined options to STREAM. Every option get its own line
 with description."
   (dolist (opt *options*)
-    (with-slots (short long description arg-parser meta-var) opt
+    (with-slots (short long description required arg-parser meta-var) opt
       (let ((opts-and-meta
-             (concatenate
-              'string
-              (if short (format nil "-~c" short) "")
-              (if (and short long) ", " "")
-              (if long  (format nil "--~a" long) "")
-              (if arg-parser (format nil " ~a" meta-var) ""))))
+              (concatenate
+               'string
+               (if short (format nil "-~c" short) "")
+               (if (and short long) ", " "")
+               (if long  (format nil "--~a" long) "")
+               (if arg-parser (format nil " ~a" meta-var) "")
+               (if required (format nil " (Required)") ""))))
         (format stream "  ~25a~a~%"
                 opts-and-meta
                 (add-text-padding
@@ -382,7 +434,7 @@ it gets too long. MARGIN specifies margin."
         (last-newline 0))
     (with-output-to-string (s)
       (dolist (opt *options*)
-        (with-slots (short long arg-parser meta-var) opt
+        (with-slots (short long required arg-parser meta-var) opt
           (let ((str
                  (format nil " [~a]"
                          (concatenate
@@ -390,7 +442,8 @@ it gets too long. MARGIN specifies margin."
                           (if short (format nil "-~c" short) "")
                           (if (and short long) "|" "")
                           (if long  (format nil "--~a" long) "")
-                          (if arg-parser (format nil " ~a" meta-var) "")))))
+                          (if arg-parser (format nil " ~a" meta-var) "")
+                          (if required (format nil " (Required)") "")))))
                 (incf i (length str))
                 (when (> (- i last-newline) fill-col)
                   (terpri s)
