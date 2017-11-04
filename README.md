@@ -75,6 +75,9 @@ containing various parameters. Here we enumerate all allowed parameters:
 * `:meta-var`—if actual option requires an argument, this is how it will be
   printed in option description.
 
+* `:required`—whether the option is required. This only makes sense if the
+  option takes an argument.
+
 ----
 
 ```
@@ -125,6 +128,12 @@ information the programmer can extract from the conditions.
   (supplied value will be used), `skip-option` (ignore the option),
   `reparse-arg` (supplied string will be parsed instead).
 
+* `missing-required-option` is thrown when a required option cannot be
+  found. Use the `missing-options` reader to get all option objects that are
+  missing. Available restarts: `use-value` (supplied list of values will be
+  used), `skip-option` (ignore all these options, effectively binding them
+  to `nil`)
+
 ```
 describe &key prefix suffix usage-of args stream
 ```
@@ -169,6 +178,7 @@ sexy! Basically, we have defined all the options just like this:
    :description "the program will run on LEVEL level"
    :short #\l
    :long "level"
+   :required t
    :arg-parser #'parse-integer
    :meta-var "LEVEL")
   (:name :output
@@ -209,8 +219,9 @@ Available options:
 so that's how it works…
 free args:
 
-$ sh example.sh -v file1.txt file2.txt
+$ sh example.sh --level 1 -v file1.txt file2.txt
 OK, running in verbose mode…
+I see you've supplied level option, you want 1 level!
 free args: file1.txt, file2.txt
 
 $ sh example.sh --level 10 --output foo.txt bar.txt
@@ -224,7 +235,7 @@ free args:
 
 $ sh example.sh --hoola-boola noola.txt
 warning: "--hoola-boola" option is unknown!
-free args: noola.txt
+fatal: missing required options: "--level"
 
 $ sh example.sh -vgl=10
 warning: "-g" option is unknown!

@@ -40,6 +40,7 @@
    :long "verbose")
   (:name :level
    :description "the program will run on LEVEL level"
+   :required t
    :short #\l
    :long "level"
    :arg-parser #'parse-integer
@@ -77,7 +78,10 @@
       (opts:arg-parser-failed (condition)
         (format t "fatal: cannot parse ~s as argument of ~s~%"
                 (opts:raw-arg condition)
-                (opts:option condition))))
+                (opts:option condition)))
+      (opts:missing-required-option (con)
+        (format t "fatal: ~a~%" con)
+        (opts:exit 1)))
   ;; Here all options are checked independently, it's trivial to code any
   ;; logic to process them.
   (when-option (options :help)

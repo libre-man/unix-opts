@@ -1,3 +1,9 @@
+## Unix-opts 0.1.6
+
+* Actually exported the `exit` function from the `unix-opts` package.
+
+* Allowed to mark options as required.
+
 ## Unix-opts 0.1.5
 
 * Added the portable `exit` function.
