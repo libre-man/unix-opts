@@ -110,6 +110,8 @@ recommended to supply them all if you don't want to end in the debugger."
 (defun run-tests ()
   "Run Unix-opts tests. Signal failure if any test fails and return NIL
 otherwise."
+  (assert (typep (argv) 'list))
+
   (multiple-value-bind (options free-args)
       (parse-opts '("--grab-int" "10" "--rere" "11" "-s" "-a" "foo.txt")
                   :unknown-option    '(skip-option)
