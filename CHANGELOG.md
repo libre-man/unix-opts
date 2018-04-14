@@ -1,3 +1,6 @@
+## Unix-opts 0.1.7
+* Fix the `argv` function on clozure
+
 ## Unix-opts 0.1.6
 
 * Actually exported the `exit` function from the `unix-opts` package.
