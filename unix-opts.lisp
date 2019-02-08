@@ -254,10 +254,13 @@ the program as first elements of the list. Portable across implementations."
              (let ((x (string x)))
                (when (>= (length x) (length opt))
                  (string= x opt :end1 (length opt))))))
-      (let ((matches (remove-if-not #'prefix-p *options* :key key)))
-        (if (cadr matches)
-            nil
-            (car matches))))))
+      (let* ((matches (remove-if-not #'prefix-p *options* :key key))
+             (exact-match (find-if #'(lambda (x) (string= x opt))
+                                   matches :key key)))
+        (cond
+          (exact-match exact-match)
+          ((cadr matches) nil)
+          (otherwise (car matches)))))))
 
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
