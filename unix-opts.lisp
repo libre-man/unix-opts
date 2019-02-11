@@ -260,7 +260,7 @@ the program as first elements of the list. Portable across implementations."
         (cond
           (exact-match exact-match)
           ((cadr matches) nil)
-          (otherwise (car matches)))))))
+          (t (car matches)))))))
 
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
