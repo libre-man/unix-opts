@@ -394,37 +394,57 @@ to `nil')"
 prefixed with PADDING spaces. If NEWLINE is non-NIL, newline character will
 be prepended to the text making it start on the next line with padding
 applied to every single line."
-  (let ((pad (make-string padding :initial-element #\Space)))
+  (let ((pad            (make-string padding      :initial-element #\Space))
+        (pad-next-lines (make-string (max 0 (1- padding)) :initial-element #\Space)))
     (with-output-to-string (s)
       (when newline
-        (format s "~&~a" pad))
+        (format s "~%~a" pad))
       (map nil
            (lambda (x)
              (write-char x s)
              (when (char= x #\Newline)
-               (write pad :stream s :escape nil)))
+               (write pad-next-lines :stream s :escape nil)))
            str))))
 
 (defun print-opts (&optional (stream *standard-output*))
   "Print info about defined options to STREAM. Every option get its own line
 with description."
-  (dolist (opt *options*)
-    (with-slots (short long description required arg-parser meta-var) opt
-      (let ((opts-and-meta
-             (concatenate
-              'string
-              (if short (format nil "-~c" short) "")
-              (if (and short long) ", " "")
-              (if long  (format nil "--~a" long) "")
-              (if arg-parser (format nil " ~a" meta-var) "")
-              (if required (format nil " (Required)") ""))))
-        (format stream "  ~25a~a~%"
-                opts-and-meta
-                (add-text-padding
-                 description
-                 :padding 27
-                 :newline (>= (length opts-and-meta) 25))))))
-  (terpri stream))
+  (flet ((pad-right (string max-size)
+           (concatenate 'string
+                        string
+                        (make-string (- max-size
+                                        (length string))
+                                     :initial-element #\Space))))
+  (let ((max-opts-length        -1)
+        (all-opts-meta          ())
+        (all-opts-descriptions  ()))
+    (dolist (opt *options*)
+      (with-slots (short long description required arg-parser meta-var) opt
+        (let ((opts-and-meta
+               (concatenate
+                'string
+                (if short (format nil "-~c" short) "")
+                (if (and short long) ", " "")
+                (if long  (format nil "--~a" long) "")
+                (if arg-parser (format nil " ~a" meta-var) "")
+                (if required (format nil " (Required)") ""))))
+          (push opts-and-meta all-opts-meta)
+          (push description all-opts-descriptions)
+          (when (> (length opts-and-meta)
+                   max-opts-length)
+            (setf max-opts-length
+                  (length opts-and-meta))))))
+    (setf max-opts-length (+ 1 max-opts-length))
+    (loop
+       for opt-meta in all-opts-meta
+       for opt-description in all-opts-descriptions do
+         (format stream "  ~a~a~%"
+                 (pad-right opt-meta max-opts-length)
+                 (add-text-padding opt-description
+                                    :padding (+ 2 max-opts-length)
+                                    :newline (>= (length opt-meta)
+                                                 25))))
+    (terpri stream))))
 
 (defun print-opts* (margin)
   "Return a string containing info about defined options. All options are
