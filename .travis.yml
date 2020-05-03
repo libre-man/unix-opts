@@ -19,6 +19,10 @@ env:
     - LISP=clisp32
     - LISP=ecl
 
+matrix:
+  allow_failures:
+    - env: LISP=ccl32 # issue filed at https://github.com/Clozure/ccl/issues/304
+
 install:
   - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^# cl-travis' > /dev/null;
     then
