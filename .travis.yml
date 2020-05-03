@@ -1,6 +1,13 @@
 language: lisp
 sudo: required
 
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libstdc++-7-dev
+      - lib32stdc++-7-dev
 env:
   matrix:
     - LISP=abcl
