@@ -132,11 +132,6 @@ recommended to supply them all if you don't want to end in the debugger."
   (is (typep (handler-case (opts:get-opts '("--grab-int"))
                (condition (c) c))
              'missing-arg))
-  ;; At one point of time, we were comparing prefixes due to which the
-  ;; following used to parse correctly
-  (is (typep (handler-case (opts:get-opts '("--grab-int" "10" "--grab-s" "hello"))
-               (condition (c) c))
-             'unknown-option))
   ;; TODO: Should we error in the following case?
   (is (typep (handler-case (opts:get-opts '("--grab-int" "10" "-a" "11"))
                (condition (c) c))
@@ -178,7 +173,7 @@ recommended to supply them all if you don't want to end in the debugger."
     (is (equalp *missing-arg-options* nil))
     (is (equalp *malformed-arguments* '("what")))))
 
-(def-test miscelleneous-3 ()
+(def-test miscelleneous-4 ()
   (multiple-value-bind (options free-args)
       (parse-opts '("--foobar" "cat" "-sl") ; very tricky (see restarts)
                   :unknown-option    '(use-value "--grab-int")
@@ -191,9 +186,9 @@ recommended to supply them all if you don't want to end in the debugger."
     (is (equalp *missing-arg-options* '("-s" "--grab-int")))
     (is (equalp *malformed-arguments* '("cat")))))
 
-(def-test miscelleneous-4 ()
+(def-test miscelleneous-5 ()
   (multiple-value-bind (options free-args)
-      (parse-opts '("--grab-i" "10" "--grab" "14" "--grab-s")
+      (parse-opts '("--grab-int" "10" "--grab" "14" "--grab-s")
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
@@ -203,7 +198,7 @@ recommended to supply them all if you don't want to end in the debugger."
     (is (equalp *missing-arg-options* '("--grab-s")))
     (is (equalp *malformed-arguments* nil))))
 
-(def-test miscelleneous-5 ()
+(def-test miscelleneous-6 ()
   (multiple-value-bind (options free-args)
       (parse-opts '("--grab-int" "15" "--" "--grab-int" "16")
                   :unknown-option    '(skip-option)
@@ -215,7 +210,7 @@ recommended to supply them all if you don't want to end in the debugger."
     (is (equalp *missing-arg-options* nil))
     (is (equalp *malformed-arguments* nil))))
 
-(def-test miscelleneous-6 ()
+(def-test miscelleneous-7 ()
   (multiple-value-bind (options free-args)
       (parse-opts '("-s" "5")
                   :unknown-option    '(skip-option)
@@ -229,7 +224,7 @@ recommended to supply them all if you don't want to end in the debugger."
     (is (equalp *missing-arg-options* nil))
     (is (equalp *malformed-arguments* nil))))
 
-(def-test miscelleneous-7 ()
+(def-test miscelleneous-8 ()
   (multiple-value-bind (options free-args)
       (parse-opts '("-s" "5")
                   :unknown-option    '(skip-option)

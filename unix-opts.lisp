@@ -254,7 +254,10 @@ the program as first elements of the list. Portable across implementations."
              (let ((x (string x)))
                (when (>= (length x) (length opt))
                  (string= x opt :end1 (length opt))))))
+      ;; Yes we use prefix, because `ls --al`, `ls --all`, `ls --alm`.
       (let ((matches (remove-if-not #'prefix-p *options* :key key)))
+        ;; Return "the" match if unique
+        ;; TODO: Should we raise ambiguous option error
         (if (cadr matches)
             nil
             (car matches))))))
