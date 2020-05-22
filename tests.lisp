@@ -47,6 +47,11 @@
          :long "grab-str"
          :arg-parser #'identity
          :meta-var "STR")
+  (:name :grab-string
+         :description "grab string STR"
+         :short #\s
+         :long "grab-string"
+         :arg-parser #'identity)
   (:name :flag-a
          :description "flag with short form only"
          :short #\a)
@@ -56,15 +61,11 @@
 
 ;;; Here is some variables that we will use and functions to reset them.
 
-(defparameter *unknown-options* nil
-  "We collect all unknown options here.")
-
+(defparameter *unknown-options* nil "We collect all unknown options here.")
+(defparameter *ambiguous-options* nil "We collect all ambiguous options here.")
 (defparameter *missing-arg-options* nil
   "Options that need an argument, but don't get one.")
-
-(defparameter *malformed-arguments* nil
-  "Here we collect malformed arguments.")
-
+(defparameter *malformed-arguments* nil "Here we collect malformed arguments.")
 (defparameter *missing-required-options*
   "Here we collect missing required options.")
 
@@ -85,7 +86,8 @@ aspects of the tests."
 
 ;;; The tests themselves.
 
-(defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed missing-required)
+(defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed
+                          missing-required ambiguous-option)
   "Parse OPTS, return results and collect some data in special variables.
 Keyword arguments allow to set arguments for `invoke-restart' function. It's
 recommended to supply them all if you don't want to end in the debugger."
@@ -97,6 +99,11 @@ recommended to supply them all if you don't want to end in the debugger."
               (push (option c) *unknown-options*)
               (when unknown-option
                 (apply #'invoke-restart unknown-option))))
+           (ambiguous-option
+            (lambda (c)
+              (push (option c) *ambiguous-options*)
+              (when ambiguous-option
+                (apply #'invoke-restart ambiguous-option))))
            (missing-arg
             (lambda (c)
               (push (option c) *missing-arg-options*)
@@ -191,11 +198,12 @@ recommended to supply them all if you don't want to end in the debugger."
       (parse-opts '("--grab-int" "10" "--grab" "14" "--grab-s")
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
-                  :arg-parser-failed '(skip-option))
+                  :arg-parser-failed '(skip-option)
+                  :ambiguous-option  '(skip-option))
     (is (equalp options '(:grab-int 10)))
     (is (equalp free-args '("14")))
-    (is (equalp *unknown-options* '("--grab")))
-    (is (equalp *missing-arg-options* '("--grab-s")))
+    (is (null (set-difference *ambiguous-options* '("--grab" "--grab-s")
+                              :test #'equal)))
     (is (equalp *malformed-arguments* nil))))
 
 (def-test miscelleneous-6 ()

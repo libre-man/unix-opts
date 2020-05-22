@@ -27,6 +27,7 @@
   (:nicknames :opts)
   (:use       #:common-lisp)
   (:export    #:unknown-option
+              #:ambiguous-option
               #:missing-arg
               #:arg-parser-failed
               #:missing-required-option
@@ -93,6 +94,14 @@ particular option."))
   (:report (lambda (c s) (format s "unknown option: ~s" (option c))))
   (:documentation "This condition is thrown when parser encounters
 unknown (not previously defined with `define-opts') option."))
+
+(define-condition ambiguous-option (troublesome-option)
+  ((matches :initarg :matches :reader matches))
+  (:report (lambda (c s) (format s "ambiguous option: ~s~%Matches to ~a"
+                                 (option c) (mapcar #'long (matches c)))))
+  (:documentation "This condition is thrown when parser encounters
+an option that could possibly parse to more than one option. Such a situation
+arises, for example, in `ls --al`."))
 
 (define-condition missing-arg (troublesome-option)
   ()
@@ -255,12 +264,13 @@ the program as first elements of the list. Portable across implementations."
                (when (>= (length x) (length opt))
                  (string= x opt :end1 (length opt))))))
       ;; Yes we use prefix, because `ls --al`, `ls --all`, `ls --alm`.
-      (let ((matches (remove-if-not #'prefix-p *options* :key key)))
-        ;; Return "the" match if unique
-        ;; TODO: Should we raise ambiguous option error
-        (if (cadr matches)
-            nil
-            (car matches))))))
+      (let* ((matches (remove-if-not #'prefix-p *options* :key key))
+             (exact-match (find-if #'(lambda (x) (string= x opt))
+                                   matches :key key)))
+        (cond
+          (exact-match exact-match)
+          ((cadr matches) matches)
+          (t (car matches)))))))
 
 (defun get-opts (&optional options)
   "Parse command line options. If OPTIONS is given, it should be a list to
@@ -307,10 +317,10 @@ to `nil')"
                                (or options (cdr (argv)))))
                (cdr tokens))
        (required (loop :with table = (make-hash-table)
-                       :for option :in *options*
-                       :when (required option)
-                         :do (setf (gethash (name option) table) option)
-                       :finally (return table)))
+                    :for option :in *options*
+                    :when (required option)
+                    :do (setf (gethash (name option) table) option)
+                    :finally (return table)))
        poption-name
        poption-raw
        poption-parser
@@ -321,16 +331,16 @@ to `nil')"
        (progn
          (when (/= (hash-table-count required) 0)
            (let ((missing (loop :for val :being :the :hash-values :of required
-                                :collect val)))
+                             :collect val)))
              (restart-case
                  (error 'missing-required-option
                         :missing-options missing)
                (skip-option ())
                (use-value (values)
                  (loop :for option :in missing
-                       :for value :in values
-                       :do (push (name option) options)
-                       :do (push value options))))))
+                    :for value :in values
+                    :do (push (name option) options)
+                    :do (push value options))))))
          (values (nreverse options)
                  (nreverse free-args))))
     (labels ((push-option (name value)
@@ -355,20 +365,24 @@ to `nil')"
                    (process-arg str))))
              (process-option (opt)
                (let ((option (find-option opt)))
-                 (if option
-                     (let ((parser (arg-parser option)))
-                       (remhash (name option) required)
-                       (if parser
-                           (setf poption-name   (name option)
-                                 poption-raw    opt
-                                 poption-parser parser)
-                           (push-option (name option) t)))
-                     (restart-case
-                         (error 'unknown-option
-                                :option opt)
-                       (use-value (value)
-                         (process-option value))
-                       (skip-option ()))))))
+                 (cond ((and (listp option) (cadr option)) ; (> length 1)
+                        (restart-case (error 'ambiguous-option :option opt
+                                             :matches option)
+                          (use-value (value) (process-option value))
+                          (skip-option ())))
+                       (option
+                        (let ((parser (arg-parser option)))
+                          (remhash (name option) required)
+                          (if parser
+                              (setf poption-name   (name option)
+                                    poption-raw    opt
+                                    poption-parser parser)
+                              (push-option (name option) t))))
+                       (t
+                        (restart-case
+                            (error 'unknown-option :option opt)
+                          (use-value (value) (process-option value))
+                          (skip-option ())))))))
       (let ((item (car tokens)))
         (cond ((and poption-name (argp item))
                (process-arg item))

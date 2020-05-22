@@ -1,8 +1,13 @@
 language: lisp
 sudo: required
 
-git:
-  depth: 2
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libstdc++-7-dev
+      - lib32stdc++-7-dev
 
 env:
   matrix:
@@ -13,6 +18,11 @@ env:
 #    - LISP=ccl32
 #    - LISP=clisp
 #    - LISP=clisp32
+#    - LISP=ecl
+
+matrix:
+  allow_failures:
+    - env: LISP=ccl32 # issue filed at https://github.com/Clozure/ccl/issues/304
 
 install:
   - # installing cl-travis
@@ -20,7 +30,7 @@ install:
     then
       ./install.sh;
     else
-      curl https://raw.githubusercontent.com/luismbo/cl-travis/master/install.sh | sh;
+      curl https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh;
     fi
 
 before_script:
