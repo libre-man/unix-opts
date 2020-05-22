@@ -246,3 +246,21 @@ recommended to supply them all if you don't want to end in the debugger."
     (is (equalp *missing-arg-options* nil))
     (is (equalp *malformed-arguments* nil))))
 
+(def-test expand-opts ()
+  (is (equalp
+       (macroexpand-1
+        '(opts:expand-opts
+          (:help "Show this help text.")
+          (:port "Port number on which to run the server." #'parse-integer t)
+          (:swank-port "Port number at which to start swank [default: 8080]" #'parse-integer)
+          (:debug "Run in debug mode if specified" #'identity)))
+       '(UNIX-OPTS:DEFINE-OPTS
+         (:NAME :HELP :DESCRIPTION "Show this help text." :SHORT #\h :REQUIRED NIL
+          :LONG "help" :ARG-PARSER NIL)
+         (:NAME :PORT :DESCRIPTION "Port number on which to run the server." :SHORT
+          #\p :REQUIRED T :LONG "port" :ARG-PARSER #'PARSE-INTEGER)
+         (:NAME :SWANK-PORT :DESCRIPTION
+          "Port number at which to start swank [default: 8080]" :SHORT #\s :REQUIRED
+          NIL :LONG "swank-port" :ARG-PARSER #'PARSE-INTEGER)
+         (:NAME :DEBUG :DESCRIPTION "Run in debug mode if specified" :SHORT #\d
+          :REQUIRED NIL :LONG "debug" :ARG-PARSER #'IDENTITY)))))
