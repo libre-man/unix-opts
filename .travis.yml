@@ -39,8 +39,6 @@ before_script:
 
 script:
   - cl -e '(ql:quickload :unix-opts/tests)
-           (setq 5am:*debug-on-failure* t)
-           (setq 5am:*debug-on-error* t)
            (asdf:test-system :unix-opts)'
     [ $? -eq 1 ]
 

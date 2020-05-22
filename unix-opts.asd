@@ -31,7 +31,7 @@
   :license      "MIT"
   :components   ((:file "unix-opts"))
   :in-order-to  ((asdf:test-op (load-op "unix-opts/tests")))
-  :perform      (asdf:test-op (o c) (uiop:symbol-call "FIVEAM" "RUN" :unix-opts)))
+  :perform      (asdf:test-op (o c) (uiop:symbol-call "UNIX-OPTS/TESTS" "RUN")))
 
 (asdf:defsystem "unix-opts/tests"
   :version      "0.1.7"
@@ -39,4 +39,4 @@
   :author       "Mark Karpov"
   :license      "MIT"
   :components   ((:file "tests"))
-  :depends-on   ("fiveam" "unix-opts"))
+  :depends-on   ("unix-opts"))
