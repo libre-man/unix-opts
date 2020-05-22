@@ -48,7 +48,7 @@
          :arg-parser #'identity
          :meta-var "STR")
   (:name :grab-string
-         :description "grab string STR"
+         :description "option to cause ambiguity with grab-str as well as help test the print function of opts:describe due to this long description"
          :short #\s
          :long "grab-string"
          :arg-parser #'identity)
