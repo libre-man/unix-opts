@@ -23,8 +23,7 @@ before_script:
   - echo "(defsystem :dummy-cl-travis-system)" > ~/lisp/dummy-cl-travis-system.asd
 
 script:
-  - cl -e '(asdf:load-system :unix-opts-tests)
-           (unix-opts:run-tests)'
+  - cl -e '(asdf:test-system :unix-opts)'
     [ $? -eq 1 ]
 
 notifications:

@@ -29,4 +29,14 @@
   :description  "minimalistic parser of command line arguments"
   :author       "Mark Karpov"
   :license      "MIT"
-  :components   ((:file "unix-opts")))
+  :components   ((:file "unix-opts"))
+  :in-order-to  ((asdf:test-op (load-op "unix-opts/tests")))
+  :perform      (asdf:test-op (o c) (uiop:symbol-call "FIVEAM" "RUN" :unix-opts)))
+
+(asdf:defsystem "unix-opts/tests"
+  :version      "0.1.7"
+  :description  "tests for unix-opts"
+  :author       "Mark Karpov"
+  :license      "MIT"
+  :components   ((:file "tests"))
+  :depends-on   ("fiveam" "unix-opts"))
