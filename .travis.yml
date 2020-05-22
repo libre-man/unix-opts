@@ -38,8 +38,9 @@ before_script:
   - echo "(defsystem :dummy-cl-travis-system)" > ~/lisp/dummy-cl-travis-system.asd
 
 script:
-  - cl -e '(ql:quickload :unix-opts/tests)
-           (asdf:test-system :unix-opts)'
+  - cl -e '(ql:quickload :unix-opts)
+           (ql:quickload :unix-opts/tests)
+           (unix-opts/tests:run)'
     [ $? -eq 1 ]
 
 notifications:

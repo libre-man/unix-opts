@@ -24,14 +24,13 @@
 ;;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(asdf:defsystem :unix-opts
+(asdf:defsystem "unix-opts"
   :version      "0.1.7"
   :description  "minimalistic parser of command line arguments"
   :author       "Mark Karpov"
   :license      "MIT"
-  :components   ((:file "unix-opts"))
-  :in-order-to  ((asdf:test-op (load-op "unix-opts/tests")))
-  :perform      (asdf:test-op (o c) (uiop:symbol-call "UNIX-OPTS/TESTS" "RUN")))
+  ;; clisp doesn't seem to support in-order-to and uiop and such, nor fiveam
+  :components   ((:file "unix-opts")))
 
 (asdf:defsystem "unix-opts/tests"
   :version      "0.1.7"

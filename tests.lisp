@@ -25,7 +25,8 @@
 
 (defpackage :unix-opts/tests
   (:shadowing-import-from :cl :describe)
-  (:use :cl :unix-opts))
+  (:use :cl :unix-opts)
+  (:export :run))
 
 (in-package :unix-opts/tests)
 
