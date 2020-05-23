@@ -196,6 +196,27 @@ otherwise."
     (assert (equalp *missing-required-options* '((:grab-int))))
     (assert (equalp *unknown-options* nil))
     (assert (equalp *missing-arg-options* nil))
-    (assert (equalp *malformed-arguments* nil))))
+    (assert (equalp *malformed-arguments* nil)))
+  (let ((described (with-output-to-string (s)
+                     (describe :stream s))))
+    (assert (equal described (format nil "~
+Available options:
+  -i, --grab-int INT (Required)
+                                grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+
+"))))
+  (let ((described (with-output-to-string (s)
+                     (describe :stream s :argument-block-width 30))))
+    (assert (equal described (format nil "~
+Available options:
+  -i, --grab-int INT (Required) grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+
+")))))
 
 (export 'run-tests)
