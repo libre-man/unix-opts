@@ -195,7 +195,15 @@ supply :SHORT variant of option.
 must be a function that takes a string and parses it.
 
 :META-VAR—if actual option requires an argument, this is how it will be
-printed in option description."
+printed in option description.
+
+:REQUIRED—whether the option is required. This only makes sense if the
+  option takes an argument.
+
+:DEFAULT—the default value used if the option was not found. This can either
+  be a function (which will be called to generate the default value) or a
+  literal value. This option cannot be combined with :REQUIRED. The default
+  value will not be provided to the :ARG-PARSER."
   `(progn
      (setf *options* nil)
      ,@(mapcar (lambda (args) (cons 'add-option args))
