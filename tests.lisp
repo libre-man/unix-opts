@@ -279,6 +279,29 @@ Available options:
                                             :long "flag-e"
                                             :arg-parser #'identity
                                             :default (list 1 2))
-    (assert warning)))
+    (assert warning))
+
+  (let (*options*)
+    (define-opts
+      (:name :opt
+       :long "opt"
+       :arg-parser #'identity)
+      (:name :opt-longer
+       :long "opt-longer"
+       :arg-parser #'parse-integer))
+    (assert (equalp (parse-opts '("--opt" "5")) '(:opt "5")))
+    (assert (equalp (parse-opts '("--opt-longer" "5")) '(:opt-longer 5)))
+    (assert (equalp (parse-opts '("--opt-longer" "5"
+                                  "--opt" "6")) '(:opt-longer 5
+                                                  :opt "6")))
+    ;; Not really happy about this behavior, but we can't break it anymore.
+    (assert (equalp (parse-opts '("--opt-l" "5")) '(:opt-longer 5)))
+    (let (signaled)
+      (handler-bind
+          ((unknown-option (lambda (c)
+                             (setf signaled c)
+                             (invoke-restart 'skip-option))))
+        (equalp (parse-opts '("--op" "5")) '(:opt-longer 5)))
+      (assert signaled))))
 
 (export 'run-tests)
