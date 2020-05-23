@@ -307,7 +307,7 @@ the program as first elements of the list. Portable across implementations."
           ((cadr matches) matches)
           (t (car matches)))))))
 
-(defun get-opts (&optional options)
+(defun get-opts (&optional (options nil options-supplied-p))
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use `argv' function to get list
 of command line arguments.
@@ -349,7 +349,9 @@ be used), `skip-option' (ignore all these options, effectively binding them
 to `nil')"
   (do ((tokens (mapcan #'split-short-opts
                        (mapcan #'split-on-=
-                               (or options (cdr (argv)))))
+                               (if options-supplied-p
+                                   options
+                                   (cdr (argv)))))
                (cdr tokens))
        (required (loop :with table = (make-hash-table)
                     :for option :in *options*
@@ -423,19 +425,15 @@ to `nil')"
                (process-arg item))
               (poption-name
                (restart-case
-                   (error 'missing-arg
-                          :option poption-raw)
+                   (error 'missing-arg :option poption-raw)
                  (use-value (value)
                    (push-option poption-name value)
-                   (when item
-                     (process-option item)))
+                   (when item (process-option item)))
                  (skip-option ()
                    (setf poption-name nil)
-                   (when item
-                     (process-option item)))))
+                   (when item (process-option item)))))
               ((string= item "--")
-               (dolist (tok (cdr tokens))
-                 (push tok free-args))
+               (dolist (tok (cdr tokens)) (push tok free-args))
                (setf tokens nil))
               ((optionp item)
                (process-option item))

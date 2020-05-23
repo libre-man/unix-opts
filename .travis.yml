@@ -34,9 +34,6 @@ install:
       curl https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh;
     fi
 
-before_script:
-  - echo "(defsystem :dummy-cl-travis-system)" > ~/lisp/dummy-cl-travis-system.asd
-
 script:
   - cl -e '(ql:quickload :unix-opts)
            (ql:quickload :unix-opts/tests)
