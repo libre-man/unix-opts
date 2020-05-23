@@ -78,6 +78,11 @@ containing various parameters. Here we enumerate all allowed parameters:
 * `:required`—whether the option is required. This only makes sense if the
   option takes an argument.
 
+* `:default`—the default value used if the option was not found. This can either
+  be a function (which will be called to generate the default value) or a
+  literal value. This option cannot be combined with `:required`. The default
+  value will not be provided to the `arg-parser`.
+
 ----
 
 ```
