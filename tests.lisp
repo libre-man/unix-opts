@@ -25,26 +25,32 @@
 
 (in-package #:unix-opts)
 
-(define-opts
-  (:name :grab-int
-   :description "grab integer INT"
-   :short #\i
-   :long "grab-int"
-   :required t
-   :arg-parser #'parse-integer
-   :meta-var "INT")
-  (:name :grab-str
-   :description "grab string STR"
-   :short #\s
-   :long "grab-str"
-   :arg-parser #'identity
-   :meta-var "STR")
-  (:name :flag-a
-   :description "flag with short form only"
-   :short #\a)
-  (:name :flag-b
-   :description "flag with long form only"
-   :long "flag-b"))
+(defun setup ()
+  (define-opts
+    (:name :grab-int
+     :description "grab integer INT"
+     :short #\i
+     :long "grab-int"
+     :required t
+     :arg-parser #'parse-integer
+     :meta-var "INT")
+    (:name :grab-str
+     :description "grab string STR"
+     :short #\s
+     :long "grab-str"
+     :arg-parser #'identity
+     :meta-var "STR")
+    (:name :flag-a
+     :description "flag with short form only"
+     :short #\a)
+    (:name :flag-b
+     :description "flag with long form only"
+     :long "flag-b")
+    (:name :flag-c
+     :description "flag with default value"
+     :long "flag-c"
+     :arg-parser #'identity
+     :default (lambda () (list 1 2)))))
 
 ;;; Here is some variables that we will use and functions to reset them.
 
@@ -74,6 +80,16 @@ aspects of the tests."
         *missing-required-options* (nreverse *missing-required-options*)
         *missing-arg-options* (nreverse *missing-arg-options*)
         *malformed-arguments* (nreverse *malformed-arguments*)))
+
+(defmacro with-muffled-warning (warning muffled-form &body body)
+  `(let ((,warning nil))
+     (handler-bind ((warning (lambda (warn)
+                               (setf ,warning warn)
+                               (let ((muffle (find-restart 'muffle-warning warn)))
+                                 (when muffle
+                                   (invoke-restart (find-restart 'muffle-warning)))))))
+       ,muffled-form)
+     ,@body))
 
 ;;; The tests themselves.
 
@@ -110,6 +126,7 @@ recommended to supply them all if you don't want to end in the debugger."
 (defun run-tests ()
   "Run Unix-opts tests. Signal failure if any test fails and return NIL
 otherwise."
+  (setup)
   (assert (typep (argv) 'list))
 
   (multiple-value-bind (options free-args)
@@ -117,7 +134,7 @@ otherwise."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-int 10 :flag-a t)))
+    (assert (equalp options '(:grab-int 10 :flag-a t :flag-c (1 2))))
     (assert (equalp free-args '("11" "foo.txt")))
     (assert (equalp *unknown-options* '("--rere")))
     (assert (equalp *missing-arg-options* '("-s")))
@@ -127,7 +144,7 @@ otherwise."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:flag-a t :grab-int 13 :flag-b t :flag-b t)))
+    (assert (equalp options '(:flag-a t :grab-int 13 :flag-b t :flag-b t :flag-c (1 2))))
     (assert (equalp free-args '("foo.txt" "bar.txt")))
     (assert (equalp *unknown-options* '("-r")))
     (assert (equalp *missing-arg-options* '("-s")))
@@ -137,7 +154,7 @@ otherwise."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-str "fooba" :grab-int 100)))
+    (assert (equalp options '(:grab-str "fooba" :grab-int 100 :flag-c (1 2))))
     (assert (equalp free-args '("-")))
     (assert (equalp *unknown-options* '("--roro")))
     (assert (equalp *missing-arg-options* nil))
@@ -147,8 +164,10 @@ otherwise."
                   :unknown-option    '(use-value "--grab-int")
                   :missing-arg       '(use-value "my-string")
                   :arg-parser-failed '(reparse-arg "15"))
-    (assert (equalp options '(:grab-int 15 :grab-str "my-string"
-                              :grab-int "my-string")))
+    (assert (equalp options '(:grab-int 15
+                              :grab-str "my-string"
+                              :grab-int "my-string"
+                              :flag-c (1 2))))
     (assert (equalp free-args nil))
     (assert (equalp *unknown-options* '("--foobar" "-l")))
     (assert (equalp *missing-arg-options* '("-s" "--grab-int")))
@@ -158,7 +177,7 @@ otherwise."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-int 10)))
+    (assert (equalp options '(:grab-int 10 :flag-c (1 2))))
     (assert (equalp free-args '("14")))
     (assert (equalp *unknown-options* '("--grab")))
     (assert (equalp *missing-arg-options* '("--grab-s")))
@@ -168,7 +187,7 @@ otherwise."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-int 15)))
+    (assert (equalp options '(:grab-int 15 :flag-c (1 2))))
     (assert (equalp free-args '("--grab-int" "16")))
     (assert (equalp *unknown-options* nil))
     (assert (equalp *missing-arg-options* nil))
@@ -179,7 +198,7 @@ otherwise."
                   :missing-arg       '(skip-option)
                   :missing-required  '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-str "5")))
+    (assert (equalp options '(:grab-str "5" :flag-c (1 2))))
     (assert (equalp free-args '()))
     (assert (equalp *missing-required-options* '((:grab-int))))
     (assert (equalp *unknown-options* nil))
@@ -191,12 +210,34 @@ otherwise."
                   :missing-arg       '(skip-option)
                   :missing-required  '(use-value (15))
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-str "5" :grab-int 15)))
+    (assert (equalp options '(:grab-str "5" :grab-int 15 :flag-c (1 2))))
     (assert (equalp free-args '()))
     (assert (equalp *missing-required-options* '((:grab-int))))
     (assert (equalp *unknown-options* nil))
     (assert (equalp *missing-arg-options* nil))
     (assert (equalp *malformed-arguments* nil)))
+
+  ;; If options with a default value are provided the default value is not used.
+  (multiple-value-bind (options _)
+      (parse-opts '("--flag-c" "hello")
+                  :missing-required '(skip-option))
+    (declare (ignore _))
+    (assert (equalp options '(:flag-c "hello"))))
+
+  (multiple-value-bind (options _)
+      (parse-opts '()
+                  :missing-required '(skip-option))
+    (declare (ignore _))
+    (let ((first-value (getf options :flag-c)))
+      (assert (equalp first-value '(1 2)))
+      (multiple-value-bind (options __)
+          (parse-opts '()
+                      :missing-required '(skip-option))
+        (declare (ignore __))
+        (let ((second-value (getf options :flag-c)))
+          (assert (not (eql first-value second-value)))
+          (assert (equalp first-value second-value))))))
+
   (let ((described (with-output-to-string (s)
                      (describe :stream s))))
     (assert (equal described (format nil "~
@@ -206,6 +247,7 @@ Available options:
   -s, --grab-str STR            grab string STR
   -a                            flag with short form only
   --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
 
 "))))
   (let ((described (with-output-to-string (s)
@@ -216,7 +258,27 @@ Available options:
   -s, --grab-str STR            grab string STR
   -a                            flag with short form only
   --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
 
-")))))
+"))))
+
+  ;; Can also give a string value as default option.
+  (with-muffled-warning warning
+      (add-option :name :flag-d
+                  :long "flag-d"
+                  :arg-parser #'identity
+                  :default "DEFAULT-FLAG-D")
+    (assert (not warning)))
+  (multiple-value-bind (options _)
+      (parse-opts '() :missing-required '(skip-option))
+    (declare (ignore _))
+    (assert (equal (getf options :flag-d) "DEFAULT-FLAG-D")))
+
+  ;; Should warn if a mutable default variable is used.
+  (with-muffled-warning warning (add-option :name :flag-e
+                                            :long "flag-e"
+                                            :arg-parser #'identity
+                                            :default (list 1 2))
+    (assert warning)))
 
 (export 'run-tests)

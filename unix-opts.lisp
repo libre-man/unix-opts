@@ -77,7 +77,12 @@ parsed with this function")
     :initarg  :meta-var
     :accessor meta-var
     :documentation "if this option requires an argument, this is how it will
-be printed in option description"))
+be printed in option description")
+   (default
+    :initarg :default
+    :accessor default
+    :documentation "if the option is not passed this value will be used,
+cannot be used in combination with REQUIRED"))
   (:documentation "representation of an option"))
 
 (define-condition troublesome-option (simple-error)
@@ -139,6 +144,7 @@ an argument, it's given but cannot be parsed by argument parser."))
         (long        (getf args :long))
         (arg-parser  (getf args :arg-parser))
         (required    (getf args :required))
+        (default     (getf args :default))
         (meta-var    (getf args :meta-var "ARG")))
     (unless (or short long)
       (error "at least one form of the option must be provided"))
@@ -149,6 +155,15 @@ an argument, it's given but cannot be parsed by argument parser."))
     (check-type arg-parser  (or null function))
     (check-type meta-var    string)
     (check-type required    boolean)
+    (when required
+      (check-type default null))
+    (when (and default
+               (or (consp default) (and
+                                    (not (stringp default))
+                                    (arrayp default))
+                   (hash-table-p default) (typep default 'standard-object)))
+      (warn "Providing mutable object as default value, please provide a function that returns a fresh instance of this object. ~
+Default value of ~A was provided." default))
     (push (make-instance 'option
                          :name        name
                          :description description
@@ -156,6 +171,7 @@ an argument, it's given but cannot be parsed by argument parser."))
                          :long        long
                          :required    required
                          :arg-parser  arg-parser
+                         :default     default
                          :meta-var    meta-var)
           *options*)))
 
@@ -244,6 +260,18 @@ the program as first elements of the list. Portable across implementations."
   (and (typep str 'string)
        (not (optionp str))))
 
+(defun maybe-funcall (value-or-fun)
+  (if (functionp value-or-fun)
+      (funcall value-or-fun)
+      value-or-fun))
+
+(defun map-options-to-hash-table (options callback)
+  (loop :with table = (make-hash-table)
+        :for option :in options
+        :when (funcall callback option)
+          :do (setf (gethash (name option) table) option)
+        :finally (return table)))
+
 (defun find-option (opt)
   "Find option OPT and return object that represents it or NIL."
   (multiple-value-bind (opt key)
@@ -259,7 +287,7 @@ the program as first elements of the list. Portable across implementations."
             nil
             (car matches))))))
 
-(defun get-opts (&optional options)
+(defun get-opts (&optional (options 'not-given))
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use `argv' function to get list
 of command line arguments.
@@ -301,13 +329,12 @@ be used), `skip-option' (ignore all these options, effectively binding them
 to `nil')"
   (do ((tokens (mapcan #'split-short-opts
                        (mapcan #'split-on-=
-                               (or options (cdr (argv)))))
+                               (if (eq options 'not-given)
+                                   (cdr (argv))
+                                   options)))
                (cdr tokens))
-       (required (loop :with table = (make-hash-table)
-                       :for option :in *options*
-                       :when (required option)
-                         :do (setf (gethash (name option) table) option)
-                       :finally (return table)))
+       (required (map-options-to-hash-table *options* #'required))
+       (default-values (map-options-to-hash-table *options* #'default))
        poption-name
        poption-raw
        poption-parser
@@ -328,6 +355,10 @@ to `nil')"
                        :for value :in values
                        :do (push (name option) options)
                        :do (push value options))))))
+         (loop :for option :being :the :hash-values :of default-values
+               :do (progn
+                     (push (name option) options)
+                     (push (maybe-funcall (default option)) options)))
          (values (nreverse options)
                  (nreverse free-args))))
     (labels ((push-option (name value)
@@ -353,13 +384,15 @@ to `nil')"
              (process-option (opt)
                (let ((option (find-option opt)))
                  (if option
-                     (let ((parser (arg-parser option)))
+                     (progn
                        (remhash (name option) required)
-                       (if parser
-                           (setf poption-name   (name option)
-                                 poption-raw    opt
-                                 poption-parser parser)
-                           (push-option (name option) t)))
+                       (remhash (name option) default-values)
+                       (let ((parser (arg-parser option)))
+                         (if parser
+                             (setf poption-name   (name option)
+                                   poption-raw    opt
+                                   poption-parser parser)
+                             (push-option (name option) t))))
                      (restart-case
                          (error 'unknown-option
                                 :option opt)
@@ -418,7 +451,7 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                      :initial-element #\Space))))
     (let* ((option-strings (mapcar
                             (lambda (opt)
-                              (with-slots (short long description required arg-parser meta-var) opt
+                              (with-slots (short long description required arg-parser meta-var default) opt
                                 (let ((opts-and-meta
                                         (concatenate
                                          'string
@@ -426,8 +459,15 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                          (if (and short long) ", " "")
                                          (if long  (format nil "--~a" long) "")
                                          (if arg-parser (format nil " ~a" meta-var) "")
-                                         (if required (format nil " (Required)") ""))))
-                                  (cons opts-and-meta description))))
+                                         (if required (format nil " (Required)") "")))
+                                      (full-description
+                                        (concatenate
+                                         'string
+                                         description
+                                         (if default
+                                             (format nil " [Default: ~A]" (maybe-funcall default))
+                                             ""))))
+                                  (cons opts-and-meta full-description))))
                             *options*))
            (max-opts-length (reduce #'max
                                     (mapcar (lambda (el)
