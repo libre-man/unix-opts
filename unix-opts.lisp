@@ -394,37 +394,56 @@ to `nil')"
 prefixed with PADDING spaces. If NEWLINE is non-NIL, newline character will
 be prepended to the text making it start on the next line with padding
 applied to every single line."
-  (let ((pad (make-string padding :initial-element #\Space)))
+  (let ((pad            (make-string padding      :initial-element #\Space))
+        (pad-next-lines (make-string (max 0 (1- padding)) :initial-element #\Space)))
     (with-output-to-string (s)
       (when newline
-        (format s "~&~a" pad))
+        (format s "~%~a" pad))
       (map nil
            (lambda (x)
              (write-char x s)
              (when (char= x #\Newline)
-               (write pad :stream s :escape nil)))
+               (write pad-next-lines :stream s :escape nil)))
            str))))
 
-(defun print-opts (&optional (stream *standard-output*))
+(defun print-opts (&optional (stream *standard-output*) (argument-block-width 25))
   "Print info about defined options to STREAM. Every option get its own line
-with description."
-  (dolist (opt *options*)
-    (with-slots (short long description required arg-parser meta-var) opt
-      (let ((opts-and-meta
-             (concatenate
-              'string
-              (if short (format nil "-~c" short) "")
-              (if (and short long) ", " "")
-              (if long  (format nil "--~a" long) "")
-              (if arg-parser (format nil " ~a" meta-var) "")
-              (if required (format nil " (Required)") ""))))
-        (format stream "  ~25a~a~%"
-                opts-and-meta
-                (add-text-padding
-                 description
-                 :padding 27
-                 :newline (>= (length opts-and-meta) 25))))))
-  (terpri stream))
+with description. A newline is printed after the options if this part of the
+text is wider than ARGUMENT-BLOCK-WIDTH."
+  (flet ((pad-right (string max-size)
+           (concatenate 'string
+                        string
+                        (make-string (- max-size
+                                         (length string))
+                                     :initial-element #\Space))))
+    (let* ((option-strings (mapcar
+                            (lambda (opt)
+                              (with-slots (short long description required arg-parser meta-var) opt
+                                (let ((opts-and-meta
+                                        (concatenate
+                                         'string
+                                         (if short (format nil "-~c" short) "")
+                                         (if (and short long) ", " "")
+                                         (if long  (format nil "--~a" long) "")
+                                         (if arg-parser (format nil " ~a" meta-var) "")
+                                         (if required (format nil " (Required)") ""))))
+                                  (cons opts-and-meta description))))
+                            *options*))
+           (max-opts-length (reduce #'max
+                                    (mapcar (lambda (el)
+                                              (length (car el)))
+                                            option-strings)
+                                    :initial-value 0)))
+      (loop
+        :for (opt-meta . opt-description) :in option-strings
+        :for newline = (>= (length opt-meta)
+                           argument-block-width)
+        :do (format stream "  ~a~a~%"
+                    (pad-right opt-meta (+ (if newline 0 1) max-opts-length))
+                    (add-text-padding opt-description
+                                      :padding (+ 3 max-opts-length)
+                                      :newline newline)))
+      (terpri stream))))
 
 (defun print-opts* (margin)
   "Return a string containing info about defined options. All options are
@@ -437,45 +456,52 @@ it gets too long. MARGIN specifies margin."
       (dolist (opt *options*)
         (with-slots (short long required arg-parser meta-var) opt
           (let ((str
-                 (format nil " [~a]"
-                         (concatenate
-                          'string
-                          (if short (format nil "-~c" short) "")
-                          (if (and short long) "|" "")
-                          (if long  (format nil "--~a" long) "")
-                          (if arg-parser (format nil " ~a" meta-var) "")
-                          (if required (format nil " (Required)") "")))))
-                (incf i (length str))
-                (when (> (- i last-newline) fill-col)
-                  (terpri s)
-                  (dotimes (x margin)
-                    (princ #\space s))
-                  (setf last-newline i))
-                (princ str s)))))))
+                  (format nil " [~a]"
+                          (concatenate
+                           'string
+                           (if short (format nil "-~c" short) "")
+                           (if (and short long) "|" "")
+                           (if long  (format nil "--~a" long) "")
+                           (if arg-parser (format nil " ~a" meta-var) "")
+                           (if required (format nil " (Required)") "")))))
+            (incf i (length str))
+            (when (> (- i last-newline) fill-col)
+              (terpri s)
+              (dotimes (x margin)
+                (princ #\space s))
+              (setf last-newline i))
+            (princ str s)))))))
 
-(defun describe (&key prefix suffix usage-of args (stream *standard-output*))
+(defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25))
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
 supplied, it should be a string, name of the program for \"Usage: \"
-section. This section is only printed if this name is given. If your program
-takes arguments (apart from options), you can specify how to print them in
-\"Usage: \" section with ARGS option (should be a string designator). Output
-goes to STREAM."
+section. This section is only printed if this name is given.
+
+If your program takes arguments (apart from options), you can specify how to
+print them in \"Usage: \" section with ARGS option (should be a string
+designator).
+
+For the \"Available options\" block: if the text that describes how to pass the
+option is wider than ARGUMENT-BLOCK-WIDTH a newline is printed before the
+description of that option.
+
+The output goes to STREAM."
   (flet ((print-part (str)
            (when str
              (princ str stream)
              (terpri stream))))
     (print-part prefix)
-    (terpri stream)
     (when usage-of
+      (terpri stream)
       (format stream "Usage: ~a~a~@[ ~a~]~%~%"
               usage-of
               (print-opts* (+ 7 (length usage-of)))
               args))
     (when *options*
       (format stream "Available options:~%")
-      (print-opts stream))
+      (print-opts stream argument-block-width))
     (print-part suffix)))
 
 (defun exit (&optional (status 0))
