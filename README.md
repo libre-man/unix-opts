@@ -1,7 +1,7 @@
 # Unix-style command line options parser
 
 [![License MIT](https://img.shields.io/badge/license-MIT-green.svg)](http://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/mrkkrp/unix-opts.svg?branch=master)](https://travis-ci.com/digikar99/unix-opts.svg?branch=master)
+[![Build Status](https://travis-ci.org/digikar99/unix-opts.svg?branch=master)](https://travis-ci.com/digikar99/unix-opts.svg?branch=master)
 [![Quicklisp](http://quickdocs.org/badge/unix-opts.svg)](http://quickdocs.org/unix-opts/)
 
 This is a minimalistic parser of command line options. The main advantage of
