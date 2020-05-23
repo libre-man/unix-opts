@@ -26,21 +26,36 @@
 (defpackage   :unix-opts
   (:nicknames :opts)
   (:use       #:common-lisp)
-  (:export    #:unknown-option
-              #:missing-arg
-              #:arg-parser-failed
-              #:missing-required-option
-              #:use-value
-              #:skip-option
-              #:reparse-arg
-              #:option
-              #:missing-options
-              #:exit
-              #:raw-arg
-              #:define-opts
-              #:argv
-              #:get-opts
-              #:describe)
+  (:export
+
+   ;; Conditions
+   #:unknown-option
+   #:troublesome-option
+   #:missing-arg
+   #:missing-required-option
+   #:arg-parser-failed
+
+   ;; Restarts
+   #:skip-option
+   #:use-value
+   #:reparse-arg
+
+   ;; Classes
+   #:option
+
+   ;; Readers
+   #:missing-options
+   #:raw-arg
+
+   ;; Functions
+   #:exit
+   #:argv
+   #:get-opts
+   #:describe
+
+   ;; Macros
+   #:define-opts)
+
   (:shadow    #:describe))
 
 (in-package #:unix-opts)
