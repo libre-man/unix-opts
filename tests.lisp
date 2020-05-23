@@ -48,7 +48,8 @@
          :description "option to cause ambiguity with grab-str as well as help test the print function of opts:describe due to this long description"
          :short #\s
          :long "grab-string"
-         :arg-parser #'identity)
+         :arg-parser #'identity
+         :default 42)
   (:name :flag-a
          :description "flag with short form only"
          :short #\a)
@@ -147,7 +148,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-int 10 :flag-a t)))
+    (assert (equalp options '(:grab-int 10 :flag-a t
+                              :grab-string 42)))
     (assert (equalp free-args '("11" "foo.txt")))
     (assert (equalp *unknown-options* '("--rere")))
     (assert (equalp *missing-arg-options* '("-s")))
@@ -159,7 +161,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:flag-a t :grab-int 13 :flag-b t :flag-b t)))
+    (assert (equalp options '(:flag-a t :grab-int 13 :flag-b t :flag-b t
+                              :grab-string 42)))
     (assert (equalp free-args '("foo.txt" "bar.txt")))
     (assert (equalp *unknown-options* '("-r")))
     (assert (equalp *missing-arg-options* '("-s")))
@@ -171,7 +174,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-str "fooba" :grab-int 100)))
+    (assert (equalp options '(:grab-str "fooba" :grab-int 100
+                              :grab-string 42)))
     (assert (equalp free-args '("-")))
     (assert (equalp *unknown-options* '("--roro")))
     (assert (equalp *missing-arg-options* nil))
@@ -184,7 +188,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(use-value "my-string")
                   :arg-parser-failed '(reparse-arg "15"))
     (assert (equalp options '(:grab-int 15 :grab-str "my-string"
-                          :grab-int "my-string")))
+                              :grab-int "my-string" ; TODO: should this be the behaviour
+                              :grab-string 42)))
     (assert (equalp free-args nil))
     (assert (equalp *unknown-options* '("--foobar" "-l")))
     (assert (equalp *missing-arg-options* '("-s" "--grab-int")))
@@ -197,10 +202,11 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option)
                   :ambiguous-option  '(skip-option))
-    (assert (equalp options '(:grab-int 10)))
+    (assert (equalp options '(:grab-int 10
+                              :grab-string 42)))
     (assert (equalp free-args '("14")))
     (assert (null (set-difference *ambiguous-options* '("--grab" "--grab-s")
-                              :test #'equal)))
+                                  :test #'equal)))
     (assert (equalp *malformed-arguments* nil))))
 
 (defun miscelleneous-6 ()
@@ -209,7 +215,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-int 15)))
+    (assert (equalp options '(:grab-int 15
+                              :grab-string 42)))
     (assert (equalp free-args '("--grab-int" "16")))
     (assert (equalp *unknown-options* nil))
     (assert (equalp *missing-arg-options* nil))
@@ -222,7 +229,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(skip-option)
                   :missing-required  '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-str "5")))
+    (assert (equalp options '(:grab-str "5"
+                              :grab-string 42)))
     (assert (equalp free-args '()))
     (assert (equalp *missing-required-options* '((:grab-int))))
     (assert (equalp *unknown-options* nil))
@@ -236,7 +244,8 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(skip-option)
                   :missing-required  '(use-value (15))
                   :arg-parser-failed '(skip-option))
-    (assert (equalp options '(:grab-str "5" :grab-int 15)))
+    (assert (equalp options '(:grab-str "5" :grab-int 15
+                              :grab-string 42)))
     (assert (equalp free-args '()))
     (assert (equalp *missing-required-options* '((:grab-int))))
     (assert (equalp *unknown-options* nil))

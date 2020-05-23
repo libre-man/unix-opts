@@ -79,7 +79,13 @@ parsed with this function")
     :initarg  :meta-var
     :accessor meta-var
     :documentation "if this option requires an argument, this is how it will
-be printed in option description"))
+be printed in option description")
+   (default
+    :initarg  :default
+    :initform nil
+    :accessor default
+    :documentation "if this option requires an argument, this is the value that will be 
+used if the option is not supplied"))
   (:documentation "representation of an option"))
 
 (define-condition troublesome-option (simple-error)
@@ -149,7 +155,8 @@ an argument, it's given but cannot be parsed by argument parser."))
         (long        (getf args :long))
         (arg-parser  (getf args :arg-parser))
         (required    (getf args :required))
-        (meta-var    (getf args :meta-var "ARG")))
+        (meta-var    (getf args :meta-var "ARG"))
+        (default     (getf args :default nil)))
     (unless (or short long)
       (error "at least one form of the option must be provided"))
     (check-type name        keyword)
@@ -166,7 +173,8 @@ an argument, it's given but cannot be parsed by argument parser."))
                          :long        long
                          :required    required
                          :arg-parser  arg-parser
-                         :meta-var    meta-var)
+                         :meta-var    meta-var
+                         :default     default)
           *options*)))
 
 (defmacro define-opts (&body descriptions)
@@ -378,6 +386,13 @@ to `nil')"
                     :for value :in values
                     :do (push (name option) options)
                     :do (push value options))))))
+         ;; handle default options
+         (loop :for option :in *options*
+            :for name = (name option)
+            :when (and (default option)
+                       (null (getf options name)))
+            :do (push name options)
+              (push (default option) options))
          (values (nreverse options)
                  (nreverse free-args))))
     (labels ((push-option (name value)
