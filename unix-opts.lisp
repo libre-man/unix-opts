@@ -26,7 +26,8 @@
 (defpackage   :unix-opts
   (:nicknames :opts)
   (:use       #:common-lisp)
-  (:export    #:unknown-option
+  (:export    #:troublesome-option
+              #:unknown-option
               #:ambiguous-option
               #:missing-arg
               #:arg-parser-failed
