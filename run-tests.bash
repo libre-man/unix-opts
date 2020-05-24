@@ -2,8 +2,6 @@
 
 if [[ -n "$COVERALLS" ]]; then
     cl -l unix-opts -l unix-opts/tests -l cl-coveralls \
-        -e '(setf fiveam:*debug-on-error* t
-                 fiveam:*debug-on-failure* t)' \
         -e '(setf *debugger-hook*
                  (lambda (c h)
                    (declare (ignore c h))
@@ -14,8 +12,6 @@ if [[ -n "$COVERALLS" ]]; then
 
 else
     cl -l unix-opts -l unix-opts/tests \
-        -e '(setf fiveam:*debug-on-error* t
-                 fiveam:*debug-on-failure* t)' \
         -e '(setf *debugger-hook*
                  (lambda (c h)
                    (declare (ignore c h))
