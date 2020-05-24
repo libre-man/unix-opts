@@ -71,11 +71,15 @@
 (defparameter *missing-required-options*
   "Here we collect missing required options.")
 
+(defparameter *unknown-provided-options*
+  "Here we collect the unknown provided options")
+
 (defun reset-state ()
   "Reset some special variables that are used to collect data about some
 aspects of the tests."
   (setf *unknown-options*          nil
         *missing-arg-options*      nil
+        *unknown-provided-options* nil
         *missing-required-options* nil
         *malformed-arguments*      nil))
 
@@ -83,6 +87,7 @@ aspects of the tests."
   "Call this after parsing."
   (setf *unknown-options*     (nreverse *unknown-options*)
         *missing-required-options* (nreverse *missing-required-options*)
+        *unknown-provided-options* (nreverse *unknown-provided-options*)
         *missing-arg-options* (nreverse *missing-arg-options*)
         *malformed-arguments* (nreverse *malformed-arguments*)))
 
@@ -107,6 +112,7 @@ aspects of the tests."
 ;;; The tests themselves.
 
 (defun parse-opts (opts &key unknown-option missing-arg arg-parser-failed missing-required
+                          unknown-option-provided
                           (all-options unix-opts::*options*))
   "Parse OPTS, return results and collect some data in special variables.
 Keyword arguments allow to set arguments for `invoke-restart' function. It's
@@ -119,6 +125,11 @@ recommended to supply them all if you don't want to end in the debugger."
                (push (option c) *unknown-options*)
                (when unknown-option
                  (apply #'invoke-restart unknown-option))))
+           (unknown-option-provided
+             (lambda (c)
+               (push (option c) *unknown-provided-options*)
+               (when unknown-option-provided
+                 (apply #'invoke-restart unknown-option-provided))))
            (missing-arg
              (lambda (c)
                (push (option c) *missing-arg-options*)
@@ -179,6 +190,17 @@ recommended to supply them all if you don't want to end in the debugger."
     (assert (equalp *unknown-options* '("--rere")))
     (assert (equalp *missing-arg-options* '("-s")))
     (assert (equalp *malformed-arguments* nil))))
+
+(test use-undefined-value
+  (multiple-value-bind (options free-args)
+      (parse-opts '("--a" "b")
+                  :unknown-option    '(use-value "--unknown")
+                  :missing-required  '(skip-option)
+                  :unknown-option-provided '(skip-option)
+                  :arg-parser-failed '(reparse-arg "15"))
+    (assert (equalp options '(:flag-c (1 2))))
+    (assert (equal free-args '("b")))
+    (assert (equal *unknown-provided-options* '("--unknown")))))
 
 (test superfluous-args
   (multiple-value-bind (options free-args)
@@ -386,6 +408,7 @@ Available options:
                       ((:suite)
                        (format t "Running suite ~A~%" (cadr test)))
                       ((:test)
+                       (setup)
                        (format t "	Running test ~A: " (nth 1 test))
                        (handler-case
                            (progn

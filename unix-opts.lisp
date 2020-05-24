@@ -30,6 +30,7 @@
 
    ;; Conditions
    #:unknown-option
+   #:unknown-option-provided
    #:troublesome-option
    #:missing-arg
    #:missing-required-option
@@ -117,6 +118,12 @@ particular option."))
   (:report (lambda (c s) (format s "unknown option: ~s" (option c))))
   (:documentation "This condition is thrown when parser encounters
 unknown (not previously defined with `define-opts') option."))
+
+(define-condition unknown-option-provided (troublesome-option)
+  ()
+  (:report (lambda (c s) (format s "Provided a unknown option: ~s" (option c))))
+  (:documentation "This condition is signaled when the restart `USE-VALUE'
+is called with an undefined option."))
 
 (define-condition missing-arg (troublesome-option)
   ()
@@ -427,7 +434,12 @@ to `nil')"
                          (error 'unknown-option
                                 :option opt)
                        (use-value (value)
-                         (process-option value))
+                         (if (find-option value defined-options)
+                             (process-option value)
+                             (restart-case
+                                 (error 'unknown-option-provided
+                                        :option value)
+                               (skip-option ()))))
                        (skip-option ()))))))
       (let ((item (car tokens)))
         (cond ((and poption-name (argp item))
