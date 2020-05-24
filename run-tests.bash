@@ -1,16 +1,19 @@
 #!/bin/bash
 
 if [[ -n "$COVERALLS" ]]; then
-    cl -l unix-opts/tests -e '(values)'
-    cl -l unix-opts/tests -l cl-coveralls \
+    ros \
         -e '(progn
               (ql:quickload :cl-coveralls)
-              (coveralls:with-coveralls ()
-                (unix-opts/tests:run)))'
+              (ql:quickload :unix-opts/tests)
+              (let (suc)
+                (coveralls:with-coveralls ()
+                  (setf suc (unix-opts/tests:run))))
+              (uiop:quit (if suc 0 1)))'
 
 else
-    cl -l unix-opts/tests \
+    ros \
         -e '(progn
+              (ql:quickload :unix-opts/tests)
               (uiop:quit (if (unix-opts/tests:run) 0 1)))'
 
 fi
