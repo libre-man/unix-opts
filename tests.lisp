@@ -25,7 +25,7 @@
 
 (defpackage :unix-opts/tests
   (:shadowing-import-from :unix-opts :describe)
-  (:use :cl :unix-opts :fiveam)
+  (:use :cl :unix-opts)
   (:export :run))
 
 (in-package #:unix-opts/tests)
@@ -89,7 +89,7 @@ aspects of the tests."
 (defmacro with-no-warning (&body body)
   (let ((warning (gensym "WARNING-")))
     `(with-muffled-warning ,warning (progn ,@body)
-       (is-false ,warning))))
+       (assert (not ,warning)))))
 
 (defmacro with-muffled-warning (warning muffled-form &body body)
   (let ((result (gensym "RESULT-")))
@@ -137,14 +137,36 @@ recommended to supply them all if you don't want to end in the debugger."
         (get-opts opts all-options))
     (finish-collecting)))
 
-(def-suite all-tests)
+(defvar *all-tests* ())
 
-(in-suite* argv :in all-tests)
+(defun add-test (tag name value)
+  (let ((new-value (list tag name value)))
+    (loop :with found = nil
+          :for test :in *all-tests*
+          :and idx :from 0
+          :while (not found)
+          :when (and (eql (nth 0 test) tag)
+                     (eql (nth 1 test) name))
+            :do (progn
+                  (format t "Redefining ~(~a~) \"~A\"~%" tag name)
+                  (setf found t
+                        (nth idx *all-tests*) new-value))
+          :finally (unless found
+                     (push new-value *all-tests*)))))
+
+(defmacro test (name &body body)
+  `(add-test :test ',name (lambda () ,@body)))
+
+(defmacro in-suite (name &key in)
+  (declare (ignore in))
+  `(add-test :suite ',name nil))
+
+(in-suite argv :in all-tests)
 (test argv-list
   :description "(argv) should return a list"
-  (is (typep (argv) 'list)))
+  (assert (typep (argv) 'list)))
 
-(in-suite* general-parsing :in all-tests)
+(in-suite general-parsing :in all-tests)
 (test unknown-args
   :description "Unknown args"
   (multiple-value-bind (options free-args)
@@ -152,11 +174,11 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:grab-int 10 :flag-a t :flag-c (1 2))))
-    (is (equalp free-args '("11" "foo.txt")))
-    (is (equalp *unknown-options* '("--rere")))
-    (is (equalp *missing-arg-options* '("-s")))
-    (is (equalp *malformed-arguments* nil))))
+    (assert (equalp options '(:grab-int 10 :flag-a t :flag-c (1 2))))
+    (assert (equalp free-args '("11" "foo.txt")))
+    (assert (equalp *unknown-options* '("--rere")))
+    (assert (equalp *missing-arg-options* '("-s")))
+    (assert (equalp *malformed-arguments* nil))))
 
 (test superfluous-args
   (multiple-value-bind (options free-args)
@@ -164,11 +186,11 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:flag-a t :grab-int 13 :flag-b t :flag-b t :flag-c (1 2))))
-    (is (equalp free-args '("foo.txt" "bar.txt")))
-    (is (equalp *unknown-options* '("-r")))
-    (is (equalp *missing-arg-options* '("-s")))
-    (is (equalp *malformed-arguments* nil))))
+    (assert (equalp options '(:flag-a t :grab-int 13 :flag-b t :flag-b t :flag-c (1 2))))
+    (assert (equalp free-args '("foo.txt" "bar.txt")))
+    (assert (equalp *unknown-options* '("-r")))
+    (assert (equalp *missing-arg-options* '("-s")))
+    (assert (equalp *malformed-arguments* nil))))
 
 (test simple-dash
   (multiple-value-bind (options free-args)
@@ -176,11 +198,11 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:grab-str "fooba" :grab-int 100 :flag-c (1 2))))
-    (is (equalp free-args '("-")))
-    (is (equalp *unknown-options* '("--roro")))
-    (is (equalp *missing-arg-options* nil))
-    (is (equalp *malformed-arguments* '("what")))))
+    (assert (equalp options '(:grab-str "fooba" :grab-int 100 :flag-c (1 2))))
+    (assert (equalp free-args '("-")))
+    (assert (equalp *unknown-options* '("--roro")))
+    (assert (equalp *missing-arg-options* nil))
+    (assert (equalp *malformed-arguments* '("what")))))
 
 (test tricky-short-arg
   (multiple-value-bind (options free-args)
@@ -188,14 +210,14 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(use-value "--grab-int")
                   :missing-arg       '(use-value "my-string")
                   :arg-parser-failed '(reparse-arg "15"))
-    (is (equalp options '(:grab-int 15
+    (assert (equalp options '(:grab-int 15
                           :grab-str "my-string"
                           :grab-int "my-string"
                           :flag-c (1 2))))
-    (is (equalp free-args nil))
-    (is (equalp *unknown-options* '("--foobar" "-l")))
-    (is (equalp *missing-arg-options* '("-s" "--grab-int")))
-    (is (equalp *malformed-arguments* '("cat")))))
+    (assert (equalp free-args nil))
+    (assert (equalp *unknown-options* '("--foobar" "-l")))
+    (assert (equalp *missing-arg-options* '("-s" "--grab-int")))
+    (assert (equalp *malformed-arguments* '("cat")))))
 
 (test double-dash
   :describe "Double dash stops parsing"
@@ -204,11 +226,11 @@ recommended to supply them all if you don't want to end in the debugger."
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:grab-int 15 :flag-c (1 2))))
-    (is (equalp free-args '("--grab-int" "16")))
-    (is (equalp *unknown-options* nil))
-    (is (equalp *missing-arg-options* nil))
-    (is (equalp *malformed-arguments* nil))))
+    (assert (equalp options '(:grab-int 15 :flag-c (1 2))))
+    (assert (equalp free-args '("--grab-int" "16")))
+    (assert (equalp *unknown-options* nil))
+    (assert (equalp *missing-arg-options* nil))
+    (assert (equalp *malformed-arguments* nil))))
 
 (test short-parsing
   :describe "Short parsing"
@@ -218,12 +240,12 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(skip-option)
                   :missing-required  '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:grab-str "5" :flag-c (1 2))))
-    (is (equalp free-args '()))
-    (is (equalp *missing-required-options* '((:grab-int))))
-    (is (equalp *unknown-options* nil))
-    (is (equalp *missing-arg-options* nil))
-    (is (equalp *malformed-arguments* nil))))
+    (assert (equalp options '(:grab-str "5" :flag-c (1 2))))
+    (assert (equalp free-args '()))
+    (assert (equalp *missing-required-options* '((:grab-int))))
+    (assert (equalp *unknown-options* nil))
+    (assert (equalp *missing-arg-options* nil))
+    (assert (equalp *malformed-arguments* nil))))
 
 (test value-in-restart
   :describe "Provide value using restart"
@@ -233,19 +255,19 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(skip-option)
                   :missing-required  '(use-value (15))
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:grab-str "5" :grab-int 15 :flag-c (1 2))))
-    (is (equalp free-args '()))
-    (is (equalp *missing-required-options* '((:grab-int))))
-    (is (equalp *unknown-options* nil))
-    (is (equalp *missing-arg-options* nil))
-    (is (equalp *malformed-arguments* nil))))
+    (assert (equalp options '(:grab-str "5" :grab-int 15 :flag-c (1 2))))
+    (assert (equalp free-args '()))
+    (assert (equalp *missing-required-options* '((:grab-int))))
+    (assert (equalp *unknown-options* nil))
+    (assert (equalp *missing-arg-options* nil))
+    (assert (equalp *malformed-arguments* nil))))
 
-(in-suite* describe :in all-tests)
+(in-suite describe :in all-tests)
 (test describe-align
   :describe "Describe should work and align nicely"
   (let ((described (with-output-to-string (s)
                      (describe :stream s))))
-    (is (equal described (format nil "~
+    (assert (equal described (format nil "~
 Available options:
   -i, --grab-int INT (Required)
                                 grab integer INT
@@ -258,7 +280,7 @@ Available options:
 
   (let ((described (with-output-to-string (s)
                      (describe :stream s :argument-block-width 30))))
-    (is (equal described (format nil "~
+    (assert (equal described (format nil "~
 Available options:
   -i, --grab-int INT (Required) grab integer INT
   -s, --grab-str STR            grab string STR
@@ -269,7 +291,7 @@ Available options:
 ")))))
 
 
-(in-suite* default-values :in all-tests)
+(in-suite default-values :in all-tests)
 (test provide-value-for-default
   :describe "Provide value for default argument"
   ;; If options with a default value are provided the default value is not used.
@@ -277,7 +299,7 @@ Available options:
       (parse-opts '("--flag-c" "hello")
                   :missing-required '(skip-option))
     (declare (ignore _))
-    (is (equalp options '(:flag-c "hello")))))
+    (assert (equalp options '(:flag-c "hello")))))
 
 (test producer-called-everytime
   :describe "Default value functions should be called every time they are used"
@@ -286,14 +308,14 @@ Available options:
                   :missing-required '(skip-option))
     (declare (ignore _))
     (let ((first-value (getf options :flag-c)))
-      (is (equalp first-value '(1 2)))
+      (assert (equalp first-value '(1 2)))
       (multiple-value-bind (options __)
           (parse-opts '()
                       :missing-required '(skip-option))
         (declare (ignore __))
         (let ((second-value (getf options :flag-c)))
-          (is (not (eql first-value second-value)))
-          (is (equalp first-value second-value)))))))
+          (assert (not (eql first-value second-value)))
+          (assert (equalp first-value second-value)))))))
 
 (test string-as-default
   :describe "Can also give a string value as default option."
@@ -305,7 +327,7 @@ Available options:
     (multiple-value-bind (options _)
         (parse-opts '() :missing-required '(skip-option) :all-options all-options)
       (declare (ignore _))
-      (is (equal (getf options :flag-d) "DEFAULT-FLAG-D")))))
+      (assert (equal (getf options :flag-d) "DEFAULT-FLAG-D")))))
 
 (test warn-on-mutable
   :describe "Should warn if a mutable default variable is used."
@@ -314,10 +336,10 @@ Available options:
                                     :long "flag-e"
                                     :arg-parser #'identity
                                     :default (list 1 2)))
-    (is-true warning)))
+    (assert warning)))
 
 
-(in-suite* prefix-matching :in all-tests)
+(in-suite prefix-matching :in all-tests)
 (test simple-prefix
   :description "Prefixes should be used"
   (multiple-value-bind (options free-args)
@@ -325,11 +347,11 @@ Available options:
                   :unknown-option    '(skip-option)
                   :missing-arg       '(skip-option)
                   :arg-parser-failed '(skip-option))
-    (is (equalp options '(:grab-int 10 :flag-c (1 2))))
-    (is (equalp free-args '("14")))
-    (is (equalp *unknown-options* '("--grab")))
-    (is (equalp *missing-arg-options* '("--grab-s")))
-    (is (equalp *malformed-arguments* nil))))
+    (assert (equalp options '(:grab-int 10 :flag-c (1 2))))
+    (assert (equalp free-args '("14")))
+    (assert (equalp *unknown-options* '("--grab")))
+    (assert (equalp *missing-arg-options* '("--grab-s")))
+    (assert (equalp *malformed-arguments* nil))))
 
 (test exact-match-prefix
   :description "Prefix matching should work, but exact matches should take precedence"
@@ -339,21 +361,38 @@ Available options:
                                  (:name :opt-longer
                                   :long "opt-longer"
                                   :arg-parser ,#'parse-integer)))))
-    (is (equalp (parse-opts '("--opt" "5") :all-options options) '(:opt "5")))
-    (is (equalp (parse-opts '("--opt-longer" "5") :all-options options) '(:opt-longer 5)))
-    (is (equalp (parse-opts '("--opt-longer" "5"
-                              "--opt" "6")
-                            :all-options options) '(:opt-longer 5
-                                                    :opt "6")))
+    (assert (equalp (parse-opts '("--opt" "5") :all-options options) '(:opt "5")))
+    (assert (equalp (parse-opts '("--opt-longer" "5") :all-options options) '(:opt-longer 5)))
+    (assert (equalp (parse-opts '("--opt-longer" "5"
+                                  "--opt" "6")
+                                :all-options options) '(:opt-longer 5
+                                                        :opt "6")))
     ;; Not really happy about this behavior, but we can't break it anymore.
-    (is (equalp (parse-opts '("--opt-l" "5") :all-options options) '(:opt-longer 5)))
+    (assert (equalp (parse-opts '("--opt-l" "5") :all-options options) '(:opt-longer 5)))
     (let (signaled)
       (handler-bind
           ((unknown-option (lambda (c)
                              (setf signaled c)
                              (invoke-restart 'skip-option))))
         (equalp (parse-opts '("--op" "5") :all-options options) '(:opt-longer 5)))
-      (is-true signaled))))
+      (assert signaled))))
 
 (defun run ()
-  (run! 'all-tests))
+  (let ((success t))
+    (handler-case
+        (progn
+          (loop :for test :in (reverse *all-tests*)
+                :do (ecase (nth 0 test)
+                      ((:suite)
+                       (format t "Running suite ~A~%" (cadr test)))
+                      ((:test)
+                       (format t "	Running test ~A: " (nth 1 test))
+                       (handler-case
+                           (progn
+                             (funcall (nth 2 test))
+                             (format t "~A~%"  #\CHECK_MARK))
+                         (error (err)
+                           (setf success nil)
+                           (format t "~A: ~A~%~%" #\CROSS_MARK err))))))
+          success)
+      (error () nil))))

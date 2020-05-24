@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ -n "$COVERALLS" ]]; then
-    cl -l fiveam -l cl-coveralls \
+    cl -l unix-opts -l unix-opts/tests -l cl-coveralls \
         -e '(setf fiveam:*debug-on-error* t
                  fiveam:*debug-on-failure* t)' \
         -e '(setf *debugger-hook*
@@ -13,7 +13,7 @@ if [[ -n "$COVERALLS" ]]; then
              (unix-opts/tests:run))'
 
 else
-    cl -l fiveam -l unix-opts \
+    cl -l unix-opts -l unix-opts/tests \
         -e '(setf fiveam:*debug-on-error* t
                  fiveam:*debug-on-failure* t)' \
         -e '(setf *debugger-hook*
@@ -22,6 +22,6 @@ else
                    (uiop:quit -1)))' \
         -e '(progn
              (ql:quickload :unix-opts/tests)
-             (unix-opts/tests:run))'
+             (uiop:quit (if (unix-opts/tests:run) 0 1)))'
 
 fi

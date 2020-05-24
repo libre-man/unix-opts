@@ -39,4 +39,4 @@
   :author       "Mark Karpov"
   :license      "MIT"
   :components   ((:file "tests"))
-  :depends-on   ("unix-opts" "fiveam"))
+  :depends-on   (:unix-opts))
