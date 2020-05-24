@@ -390,9 +390,12 @@ Available options:
                        (handler-case
                            (progn
                              (funcall (nth 2 test))
-                             (format t "~A~%"  #\CHECK_MARK))
+                             (format t "~A~%"  (or #+sbcl #\CHECK_MARK
+                                                   "SUCCESS")))
                          (error (err)
                            (setf success nil)
-                           (format t "~A: ~A~%~%" #\CROSS_MARK err))))))
+                           (format t "~A: ~A~%~%" (or #+sbcl #\CROSS_MARK
+                                                      "X")
+                                   err))))))
           success)
       (error () nil))))
