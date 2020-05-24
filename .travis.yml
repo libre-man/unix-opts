@@ -23,6 +23,12 @@ jobs:
   allow_failures:
     - env: LISP=ccl32
 
+# this bit is just testing that travis correctly sets up ASDF to find
+# systems placed somewhere within ~/lisp. You can remove this section
+# in your own .travis.yml file.
+before_script:
+  - echo "(defsystem :dummy-cl-travis-system)" > ~/lisp/dummy-cl-travis-system.asd
+
 install:
   - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^# cl-travis' > /dev/null;
     then
@@ -30,9 +36,12 @@ install:
     else
       curl https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh;
     fi
+  - cl -e '(ql:update-all-dists :prompt nil)'
+  - git clone https://github.com/fukamachi/cl-coveralls ~/lisp/cl-coveralls
 
 script:
   - ./run-tests.bash
+
 
 notifications:
   email: false
