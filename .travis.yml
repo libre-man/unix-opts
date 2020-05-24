@@ -12,7 +12,7 @@ addons:
 env:
   matrix:
     - LISP=abcl
-    - LISP=sbcl COVERALLS=true
+    - LISP=sbcl-bin COVERALLS=true
     - LISP=sbcl32
     - LISP=ccl
     - LISP=ccl32
@@ -30,14 +30,7 @@ before_script:
   - echo "(defsystem :dummy-cl-travis-system)" > ~/lisp/dummy-cl-travis-system.asd
 
 install:
-  - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^# cl-travis' > /dev/null;
-    then
-      ./install.sh;
-    else
-      curl https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh;
-    fi
-  - cl -e '(ql:update-all-dists :prompt nil)'
-  - git clone https://github.com/fukamachi/cl-coveralls ~/lisp/cl-coveralls
+  - ./travis-install.bash
 
 script:
   - ./run-tests.bash
