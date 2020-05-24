@@ -52,6 +52,10 @@
    #:argv
    #:get-opts
    #:describe
+   #:make-options
+
+   ;; Symbols
+   #:not-given
 
    ;; Macros
    #:define-opts)
@@ -151,7 +155,10 @@ an argument, it's given but cannot be parsed by argument parser."))
 (defparameter *options* nil
   "List of all defined options.")
 
-(defun add-option (&rest args)
+(defun make-options (opts)
+  (mapcar #'make-option opts))
+
+(defun make-option (args)
   "Register an option according to ARGS."
   (let ((name        (getf args :name))
         (description (getf args :description "?"))
@@ -179,16 +186,15 @@ an argument, it's given but cannot be parsed by argument parser."))
                    (hash-table-p default) (typep default 'standard-object)))
       (warn "Providing mutable object as default value, please provide a function that returns a fresh instance of this object. ~
 Default value of ~A was provided." default))
-    (push (make-instance 'option
-                         :name        name
-                         :description description
-                         :short       short
-                         :long        long
-                         :required    required
-                         :arg-parser  arg-parser
-                         :default     default
-                         :meta-var    meta-var)
-          *options*)))
+    (make-instance 'option
+                   :name        name
+                   :description description
+                   :short       short
+                   :long        long
+                   :required    required
+                   :arg-parser  arg-parser
+                   :default     default
+                   :meta-var    meta-var)))
 
 (defmacro define-opts (&body descriptions)
   "Define command line options. Arguments of this macro must be plists
@@ -220,10 +226,8 @@ printed in option description.
   literal value. This option cannot be combined with :REQUIRED. The default
   value will not be provided to the :ARG-PARSER."
   `(progn
-     (setf *options* nil)
-     ,@(mapcar (lambda (args) (cons 'add-option args))
-               descriptions)
-     (setf *options* (nreverse *options*))
+     (setf *options* (make-options (list ,@(mapcar (lambda (desc) (cons 'list desc))
+                                                   descriptions))))
      (values)))
 
 (defun argv ()
@@ -295,7 +299,7 @@ the program as first elements of the list. Portable across implementations."
           :do (setf (gethash (name option) table) option)
         :finally (return table)))
 
-(defun find-option (opt)
+(defun find-option (opt options)
   "Find option OPT and return object that represents it or NIL."
   (multiple-value-bind (opt key)
       (if (shortp opt)
@@ -305,7 +309,7 @@ the program as first elements of the list. Portable across implementations."
              (let ((x (string x)))
                (when (>= (length x) (length opt))
                  (string= x opt :end1 (length opt))))))
-      (let* ((matches (remove-if-not #'prefix-p *options* :key key))
+      (let* ((matches (remove-if-not #'prefix-p options :key key))
              (exact-match (find-if #'(lambda (x) (string= x opt))
                                    matches :key key)))
         (cond
@@ -313,7 +317,7 @@ the program as first elements of the list. Portable across implementations."
           ((cadr matches) nil)
           (t (car matches)))))))
 
-(defun get-opts (&optional (options 'not-given))
+(defun get-opts (&optional (options 'not-given) (defined-options *options*))
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use `argv' function to get list
 of command line arguments.
@@ -359,8 +363,8 @@ to `nil')"
                                    (cdr (argv))
                                    options)))
                (cdr tokens))
-       (required (map-options-to-hash-table *options* #'required))
-       (default-values (map-options-to-hash-table *options* #'default))
+       (required (map-options-to-hash-table defined-options #'required))
+       (default-values (map-options-to-hash-table defined-options #'default))
        poption-name
        poption-raw
        poption-parser
@@ -408,7 +412,7 @@ to `nil')"
                  (reparse-arg (str)
                    (process-arg str))))
              (process-option (opt)
-               (let ((option (find-option opt)))
+               (let ((option (find-option opt defined-options)))
                  (if option
                      (progn
                        (remhash (name option) required)
@@ -465,7 +469,7 @@ applied to every single line."
                (write pad-next-lines :stream s :escape nil)))
            str))))
 
-(defun print-opts (&optional (stream *standard-output*) (argument-block-width 25))
+(defun print-opts (defined-options &optional (stream *standard-output*) (argument-block-width 25))
   "Print info about defined options to STREAM. Every option get its own line
 with description. A newline is printed after the options if this part of the
 text is wider than ARGUMENT-BLOCK-WIDTH."
@@ -494,7 +498,7 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                              (format nil " [Default: ~A]" (maybe-funcall default))
                                              ""))))
                                   (cons opts-and-meta full-description))))
-                            *options*))
+                            defined-options))
            (max-opts-length (reduce #'max
                                     (mapcar (lambda (el)
                                               (length (car el)))
@@ -511,7 +515,7 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                       :newline newline)))
       (terpri stream))))
 
-(defun print-opts* (margin)
+(defun print-opts* (margin defined-options)
   "Return a string containing info about defined options. All options are
 displayed on one line, although this function tries to print it elegantly if
 it gets too long. MARGIN specifies margin."
@@ -519,7 +523,7 @@ it gets too long. MARGIN specifies margin."
         (i 0)
         (last-newline 0))
     (with-output-to-string (s)
-      (dolist (opt *options*)
+      (dolist (opt defined-options)
         (with-slots (short long required arg-parser meta-var) opt
           (let ((str
                   (format nil " [~a]"
@@ -538,7 +542,8 @@ it gets too long. MARGIN specifies margin."
               (setf last-newline i))
             (princ str s)))))))
 
-(defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25))
+(defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
+                   (defined-options *options*))
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
@@ -563,11 +568,11 @@ The output goes to STREAM."
       (terpri stream)
       (format stream "Usage: ~a~a~@[ ~a~]~%~%"
               usage-of
-              (print-opts* (+ 7 (length usage-of)))
+              (print-opts* (+ 7 (length usage-of)) defined-options)
               args))
-    (when *options*
+    (when defined-options
       (format stream "Available options:~%")
-      (print-opts stream argument-block-width))
+      (print-opts defined-options stream argument-block-width))
     (print-part suffix)))
 
 (defun exit (&optional (status 0))
