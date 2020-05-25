@@ -56,9 +56,6 @@
    #:describe
    #:make-options
 
-   ;; Symbols
-   #:not-given
-
    ;; Macros
    #:define-opts)
 
@@ -325,7 +322,7 @@ the program as first elements of the list. Portable across implementations."
           ((cadr matches) nil)
           (t (car matches)))))))
 
-(defun get-opts (&optional (options 'not-given) (defined-options *options*))
+(defun get-opts (&optional (options nil options-supplied-p) (defined-options *options*))
   "Parse command line options. If OPTIONS is given, it should be a list to
 parse. If it's not given, the function will use `argv' function to get list
 of command line arguments.
@@ -367,9 +364,9 @@ be used), `skip-option' (ignore all these options, effectively binding them
 to `nil')"
   (do ((tokens (mapcan #'split-short-opts
                        (mapcan #'split-on-=
-                               (if (eq options 'not-given)
-                                   (cdr (argv))
-                                   options)))
+                               (if options-supplied-p
+                                   options
+                                   (cdr (argv)))))
                (cdr tokens))
        (required (map-options-to-hash-table defined-options #'required))
        (default-values (map-options-to-hash-table defined-options #'default))
