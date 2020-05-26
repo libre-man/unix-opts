@@ -4,6 +4,7 @@
 ;;; line options.
 ;;;
 ;;; Copyright © 2015–2018 Mark Karpov
+;;; Copyright © 2018–2020 Thomas Schaper
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining a
 ;;; copy of this software and associated documentation files (the
@@ -30,3 +31,12 @@
   :author       "Mark Karpov"
   :license      "MIT"
   :components   ((:file "unix-opts")))
+
+
+(asdf:defsystem :unix-opts/tests
+  :version      "0.1.7"
+  :description  "tests for unix-opts-tests"
+  :author       "Mark Karpov"
+  :license      "MIT"
+  :components   ((:file "tests"))
+  :depends-on   (:unix-opts))
