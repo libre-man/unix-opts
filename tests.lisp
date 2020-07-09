@@ -311,8 +311,39 @@ Available options:
   --flag-b                      flag with long form only
   --flag-c ARG                  flag with default value [Default: (1 2)]
 
-")))))
+"))))
 
+  (let ((described (with-output-to-string (s)
+                     (describe :stream s
+                               :available-options-label "Options"
+                               :argument-block-width 30))))
+    (assert (equal described (format nil "~
+Options:
+  -i, --grab-int INT (Required) grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
+
+"))))
+
+  (let ((described (with-output-to-string (s)
+                     (describe :stream s
+                               :usage-of       "foo"
+                               :usage-of-label "program usage"
+                               :argument-block-width 30))))
+    (assert (equal described (format nil "
+program usage: foo [-i|--grab-int INT (Required)] [-s|--grab-str STR] [-a]
+                   [--flag-b] [--flag-c ARG]
+
+Available options:
+  -i, --grab-int INT (Required) grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
+
+")))))
 
 (in-suite default-values :in all-tests)
 (test provide-value-for-default
