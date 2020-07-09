@@ -553,7 +553,7 @@ it gets too long. MARGIN specifies margin."
             (princ str s)))))))
 
 (defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
-                   (defined-options *options*))
+                   (defined-options *options*) (usage-of-label "Usage") (available-options-label "Available options"))
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
@@ -561,12 +561,19 @@ supplied, it should be a string, name of the program for \"Usage: \"
 section. This section is only printed if this name is given.
 
 If your program takes arguments (apart from options), you can specify how to
-print them in \"Usage: \" section with ARGS option (should be a string
+print them in 'usage' section with ARGS option (should be a string
 designator).
 
-For the \"Available options\" block: if the text that describes how to pass the
+For the 'available options' block: if the text that describes how to pass the
 option is wider than ARGUMENT-BLOCK-WIDTH a newline is printed before the
 description of that option.
+
+The 'usage' section will be prefixed with the value of the key
+argument `usage-of-label` (default value: \"Usage\"), and the
+'available options' block will starts with the value of the key
+argument `available-options-label'
+(default value: \"Available options\")
+on a single line
 
 The output goes to STREAM."
   (flet ((print-part (str)
@@ -576,12 +583,16 @@ The output goes to STREAM."
     (print-part prefix)
     (when usage-of
       (terpri stream)
-      (format stream "Usage: ~a~a~@[ ~a~]~%~%"
+      (format stream "~a: ~a~a~@[ ~a~]~%~%"
+              usage-of-label
               usage-of
-              (print-opts* (+ 7 (length usage-of)) defined-options)
+              (print-opts* (+ (length usage-of-label)
+                              (length usage-of)
+                              2) ; comma and space
+                           defined-options)
               args))
     (when defined-options
-      (format stream "Available options:~%")
+      (format stream "~a:~%" available-options-label)
       (print-opts defined-options stream argument-block-width))
     (print-part suffix)))
 
