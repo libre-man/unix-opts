@@ -588,7 +588,7 @@ The output goes to STREAM."
               usage-of
               (print-opts* (+ (length usage-of-label)
                               (length usage-of)
-                              2) ; comma and space
+                              2) ; colon and space
                            defined-options)
               args))
     (when defined-options
