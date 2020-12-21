@@ -487,7 +487,7 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
            (concatenate 'string
                         string
                         (make-string (- max-size
-                                         (length string))
+                                        (length string))
                                      :initial-element #\Space))))
     (let* ((option-strings (mapcar
                             (lambda (opt)
@@ -508,20 +508,16 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                              (format nil " [Default: ~A]" (maybe-funcall default))
                                              ""))))
                                   (cons opts-and-meta full-description))))
-                            defined-options))
-           (max-opts-length (reduce #'max
-                                    (mapcar (lambda (el)
-                                              (length (car el)))
-                                            option-strings)
-                                    :initial-value 0)))
+                            defined-options)))
       (loop
         :for (opt-meta . opt-description) :in option-strings
         :for newline = (>= (length opt-meta)
                            argument-block-width)
         :do (format stream "  ~a~a~%"
-                    (pad-right opt-meta (+ (if newline 0 1) max-opts-length))
+                    (pad-right opt-meta (max (+ (if newline 0 1) argument-block-width)
+                                             (length opt-meta)))
                     (add-text-padding opt-description
-                                      :padding (+ 3 max-opts-length)
+                                      :padding (+ 3 argument-block-width)
                                       :newline newline)))
       (terpri stream))))
 
