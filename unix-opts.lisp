@@ -462,32 +462,57 @@ to `nil')"
                (process-option item))
               (t (push item free-args)))))))
 
-(defun add-text-padding (str &key padding newline)
-  "Add padding to text STR. Every line except for the first one, will be
-prefixed with PADDING spaces. If NEWLINE is non-NIL, newline character will
-be prepended to the text making it start on the next line with padding
+(defun add-text-padding (str &key padding newline max-width)
+  "Add padding to text STR. Every line except for the first one, will
+be prefixed with PADDING spaces, and lines will be wrapped before
+MAX-WIDTH characters. If NEWLINE is non-NIL, newline character will be
+prepended to the text making it start on the next line with padding
 applied to every single line."
-  (let ((pad            (make-string padding      :initial-element #\Space))
-        (pad-next-lines (make-string (max 0 (1- padding)) :initial-element #\Space)))
-    (with-output-to-string (s)
-      (when newline
-        (format s "~%~a" pad))
-      (map nil
-           (lambda (x)
-             (write-char x s)
-             (when (char= x #\Newline)
-               (write pad-next-lines :stream s :escape nil)))
-           str))))
+  (with-output-to-string (s)
+    (when newline
+      (format s "~%~vt" padding))
+    (loop for c across str
+          for i from 0 do
+            (let ((c (cond ((linebreak-needed-p str c i max-width)
+                            (setf i 0)
+                            #\Newline)
+                           (t c))))
+              (write-char c s)
+              (when (char= c #\Newline)
+                (format s "~vt" padding))))))
 
-(defun print-opts (defined-options &optional (stream *standard-output*) (argument-block-width 25))
-  "Print info about defined options to STREAM. Every option get its own line
-with description. A newline is printed after the options if this part of the
-text is wider than ARGUMENT-BLOCK-WIDTH."
+(defun linebreak-needed-p (str c i max-width)
+  "If C is a space or tab and the next occurrence of whitespace
+starting at I is after MAX-WIDTH, return T, else return NIL."
+  (when (and (member c '(#\Space #\Tab))
+             (> (next-whitespace str (1+ i))
+                max-width))
+    t))
+
+(defun next-whitespace (str start-from)
+  "Find the index of the next whitespace character in STR starting
+from START-FROM. If whitespace not found, returns length of STR."
+  (or (position-if
+       (lambda (c)
+         (member c
+                 '(#\Space #\Tab #\Linefeed #\Return #\Newline #\Page #\Vt)))
+       str
+       :start start-from)
+      (length str)))
+
+(defun print-opts (defined-options &optional
+                                     (stream *standard-output*)
+                                     (argument-block-width 25)
+                                     (max-width 80))
+  "Print info about defined options to STREAM. Every option get its
+own line with description. A newline is printed after the options if
+this part of the text is wider than ARGUMENT-BLOCK-WIDTH. Descriptions
+will be wrapped if length of line is longer than MAX-WIDTH."
   (flet ((pad-right (string max-size)
            (concatenate 'string
                         string
                         (make-string (- max-size
-                                         (length string))
+                                        (length string))
                                      :initial-element #\Space))))
     (let* ((option-strings (mapcar
                             (lambda (opt)
@@ -514,15 +539,17 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                               (length (car el)))
                                             option-strings)
                                     :initial-value 0)))
-      (loop
-        :for (opt-meta . opt-description) :in option-strings
-        :for newline = (>= (length opt-meta)
-                           argument-block-width)
-        :do (format stream "  ~a~a~%"
-                    (pad-right opt-meta (+ (if newline 0 1) max-opts-length))
-                    (add-text-padding opt-description
-                                      :padding (+ 3 max-opts-length)
-                                      :newline newline)))
+      (let ((padding (+ 3 max-opts-length)))
+        (loop
+          :for (opt-meta . opt-description) :in option-strings
+          :for newline = (>= (length opt-meta)
+                             argument-block-width)
+          :do (format stream "  ~a~a~%"
+                      (pad-right opt-meta (+ (if newline 0 1) max-opts-length))
+                      (add-text-padding opt-description
+                                        :padding padding
+                                        :newline newline
+                                        :max-width (- max-width padding)))))
       (terpri stream))))
 
 (defun print-opts* (margin defined-options)
@@ -553,7 +580,8 @@ it gets too long. MARGIN specifies margin."
             (princ str s)))))))
 
 (defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
-                   (defined-options *options*) (usage-of-label "Usage") (available-options-label "Available options"))
+                   (defined-options *options*) (usage-of-label "Usage") (available-options-label "Available options")
+                   (max-width 80))
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
@@ -564,9 +592,11 @@ If your program takes arguments (apart from options), you can specify how to
 print them in 'usage' section with ARGS option (should be a string
 designator).
 
-For the 'available options' block: if the text that describes how to pass the
-option is wider than ARGUMENT-BLOCK-WIDTH a newline is printed before the
-description of that option.
+For the 'available options' block: if the text that describes how to
+pass the option is wider than ARGUMENT-BLOCK-WIDTH a newline is
+printed before the description of that option. If the whole line is
+wider than MAX-WIDTH, the desription text will be wrapped before
+MAX-WIDTH characters.
 
 The 'usage' section will be prefixed with the value of the key
 argument `usage-of-label` (default value: \"Usage\"), and the
@@ -593,7 +623,7 @@ The output goes to STREAM."
               args))
     (when defined-options
       (format stream "~a:~%" available-options-label)
-      (print-opts defined-options stream argument-block-width))
+      (print-opts defined-options stream argument-block-width max-width))
     (print-part suffix)))
 
 (defun exit (&optional (status 0))
