@@ -535,21 +535,22 @@ it gets too long. MARGIN specifies margin."
     (with-output-to-string (s)
       (dolist (opt defined-options)
         (with-slots (short long required arg-parser meta-var) opt
-          (let ((str
-                  (format nil " [~a]"
-                          (concatenate
-                           'string
-                           (if short (format nil "-~c" short) "")
-                           (if (and short long) "|" "")
-                           (if long  (format nil "--~a" long) "")
-                           (if arg-parser (format nil " ~a" meta-var) "")
-                           (if required (format nil " (Required)") "")))))
-            (incf i (length str))
-            (when (> (- i last-newline) fill-col)
+          (let* ((str
+                   (format nil " [~a]"
+                           (concatenate
+                            'string
+                            (if short (format nil "-~c" short) "")
+                            (if (and short long) "|" "")
+                            (if long  (format nil "--~a" long) "")
+                            (if arg-parser (format nil " ~a" meta-var) "")
+                            (if required (format nil " (Required)") ""))))
+                 (length (length str)))
+            (when (> (- (+ i length) last-newline) fill-col)
               (terpri s)
               (dotimes (x margin)
                 (princ #\space s))
               (setf last-newline i))
+            (incf i length)
             (princ str s)))))))
 
 (defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
