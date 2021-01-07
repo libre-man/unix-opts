@@ -576,6 +576,9 @@ argument `available-options-label'
 (default value: \"Available options\")
 on a single line
 
+If USAGE-OF is provided and BRIEF is non-NIL, the 'available options'
+block will be omitted from the output.
+
 The output goes to STREAM."
   (flet ((print-part (str)
            (when str
@@ -592,7 +595,7 @@ The output goes to STREAM."
                               2) ; colon and space
                            defined-options)
               args))
-    (when (and (or (not usage-of) (not brief)) defined-options)
+    (when (and (not (and usage-of brief)) defined-options)
       (format stream "~a:~%" available-options-label)
       (print-opts defined-options stream argument-block-width))
     (print-part suffix)))
