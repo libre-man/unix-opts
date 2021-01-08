@@ -525,36 +525,37 @@ text is wider than ARGUMENT-BLOCK-WIDTH."
                                       :newline newline)))
       (terpri stream))))
 
-(defun print-opts* (margin defined-options)
+(defun print-opts* (margin max-width defined-options)
   "Return a string containing info about defined options. All options are
 displayed on one line, although this function tries to print it elegantly if
 it gets too long. MARGIN specifies margin."
-  (let ((fill-col (- 80 margin))
+  (let ((fill-col (- max-width margin))
         (i 0)
         (last-newline 0))
     (with-output-to-string (s)
       (dolist (opt defined-options)
         (with-slots (short long required arg-parser meta-var) opt
-          (let ((str
-                  (format nil " [~a]"
-                          (concatenate
-                           'string
-                           (if short (format nil "-~c" short) "")
-                           (if (and short long) "|" "")
-                           (if long  (format nil "--~a" long) "")
-                           (if arg-parser (format nil " ~a" meta-var) "")
-                           (if required (format nil " (Required)") "")))))
-            (incf i (length str))
-            (when (> (- i last-newline) fill-col)
+          (let* ((str
+                   (format nil " [~a]"
+                           (concatenate
+                            'string
+                            (if short (format nil "-~c" short) "")
+                            (if (and short long) "|" "")
+                            (if long  (format nil "--~a" long) "")
+                            (if arg-parser (format nil " ~a" meta-var) "")
+                            (if required (format nil " (Required)") ""))))
+                 (length (length str)))
+            (when (> (- (+ i length) last-newline) fill-col)
               (terpri s)
               (dotimes (x margin)
                 (princ #\space s))
               (setf last-newline i))
+            (incf i length)
             (princ str s)))))))
 
 (defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
                    (defined-options *options*) (usage-of-label "Usage") (available-options-label "Available options")
-                   brief)
+                   (max-width 80) brief)
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
@@ -593,6 +594,7 @@ The output goes to STREAM."
               (print-opts* (+ (length usage-of-label)
                               (length usage-of)
                               2) ; colon and space
+                           max-width
                            defined-options)
               args))
     (when (and (not (and usage-of brief)) defined-options)

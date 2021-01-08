@@ -234,9 +234,9 @@ recommended to supply them all if you don't want to end in the debugger."
                   :missing-arg       '(use-value "my-string")
                   :arg-parser-failed '(reparse-arg "15"))
     (assert (equalp options '(:grab-int 15
-                          :grab-str "my-string"
-                          :grab-int "my-string"
-                          :flag-c (1 2))))
+                              :grab-str "my-string"
+                              :grab-int "my-string"
+                              :flag-c (1 2))))
     (assert (equalp free-args nil))
     (assert (equalp *unknown-options* '("--foobar" "-l")))
     (assert (equalp *missing-arg-options* '("-s" "--grab-int")))
@@ -430,6 +430,61 @@ Available options:
                              (invoke-restart 'skip-option))))
         (equalp (parse-opts '("--op" "5") :all-options options) '(:opt-longer 5)))
       (assert signaled))))
+
+(test wrapping-usage-line
+  :description "Usage line should wrap when the next option would put it past MAX-WIDTH characters"
+  (let ((described (with-output-to-string (s)
+                     (describe :stream    s
+                               :usage-of  "foo"
+                               :max-width 50))))
+    (assert (equal described (format nil "
+Usage: foo [-i|--grab-int INT (Required)]
+           [-s|--grab-str STR] [-a] [--flag-b]
+           [--flag-c ARG]
+
+Available options:
+  -i, --grab-int INT (Required)
+                                grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
+
+"))))
+
+  (let ((described (with-output-to-string (s)
+                     (describe :stream    s
+                               :usage-of  "foo"))))
+    (assert (equal described (format nil "
+Usage: foo [-i|--grab-int INT (Required)] [-s|--grab-str STR] [-a] [--flag-b]
+           [--flag-c ARG]
+
+Available options:
+  -i, --grab-int INT (Required)
+                                grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
+
+"))))
+
+  (let ((described (with-output-to-string (s)
+                     (describe :stream    s
+                               :usage-of  "foo"
+                               :max-width 100))))
+    (assert (equal described (format nil "
+Usage: foo [-i|--grab-int INT (Required)] [-s|--grab-str STR] [-a] [--flag-b] [--flag-c ARG]
+
+Available options:
+  -i, --grab-int INT (Required)
+                                grab integer INT
+  -s, --grab-str STR            grab string STR
+  -a                            flag with short form only
+  --flag-b                      flag with long form only
+  --flag-c ARG                  flag with default value [Default: (1 2)]
+
+")))))
 
 (defun run ()
   (let ((success t))
