@@ -555,7 +555,7 @@ it gets too long. MARGIN specifies margin."
 
 (defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
                    (defined-options *options*) (usage-of-label "Usage") (available-options-label "Available options")
-                   (max-width 80))
+                   (max-width 80) brief)
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
 that will be printed before and after options respectively. If USAGE-OF is
@@ -577,6 +577,9 @@ argument `available-options-label'
 (default value: \"Available options\")
 on a single line
 
+If USAGE-OF is provided and BRIEF is non-NIL, the 'available options'
+block will be omitted from the output.
+
 The output goes to STREAM."
   (flet ((print-part (str)
            (when str
@@ -594,7 +597,7 @@ The output goes to STREAM."
                            max-width
                            defined-options)
               args))
-    (when defined-options
+    (when (and (not (and usage-of brief)) defined-options)
       (format stream "~a:~%" available-options-label)
       (print-opts defined-options stream argument-block-width))
     (print-part suffix)))
