@@ -293,11 +293,26 @@ recommended to supply them all if you don't want to end in the debugger."
     (assert (equal described (format nil "~
 Available options:
   -i, --grab-int INT (Required)
-                                grab integer INT
-  -s, --grab-str STR            grab string STR
-  -a                            flag with short form only
-  --flag-b                      flag with long form only
-  --flag-c ARG                  flag with default value [Default: (1 2)]
+                            grab integer INT
+  -s, --grab-str STR        grab string STR
+  -a                        flag with short form only
+  --flag-b                  flag with long form only
+  --flag-c ARG              flag with default value [Default: (1 2)]
+
+"))))
+
+  (let ((described (with-output-to-string (s)
+                     (describe :stream s :argument-block-width 10))))
+    (assert (equal described (format nil "~
+Available options:
+  -i, --grab-int INT (Required)
+             grab integer INT
+  -s, --grab-str STR
+             grab string STR
+  -a         flag with short form only
+  --flag-b   flag with long form only
+  --flag-c ARG
+             flag with default value [Default: (1 2)]
 
 "))))
 
@@ -305,11 +320,11 @@ Available options:
                      (describe :stream s :argument-block-width 30))))
     (assert (equal described (format nil "~
 Available options:
-  -i, --grab-int INT (Required) grab integer INT
-  -s, --grab-str STR            grab string STR
-  -a                            flag with short form only
-  --flag-b                      flag with long form only
-  --flag-c ARG                  flag with default value [Default: (1 2)]
+  -i, --grab-int INT (Required)  grab integer INT
+  -s, --grab-str STR             grab string STR
+  -a                             flag with short form only
+  --flag-b                       flag with long form only
+  --flag-c ARG                   flag with default value [Default: (1 2)]
 
 "))))
 
@@ -319,11 +334,11 @@ Available options:
                                :argument-block-width 30))))
     (assert (equal described (format nil "~
 Options:
-  -i, --grab-int INT (Required) grab integer INT
-  -s, --grab-str STR            grab string STR
-  -a                            flag with short form only
-  --flag-b                      flag with long form only
-  --flag-c ARG                  flag with default value [Default: (1 2)]
+  -i, --grab-int INT (Required)  grab integer INT
+  -s, --grab-str STR             grab string STR
+  -a                             flag with short form only
+  --flag-b                       flag with long form only
+  --flag-c ARG                   flag with default value [Default: (1 2)]
 
 "))))
 
@@ -337,11 +352,11 @@ program usage: foo [-i|--grab-int INT (Required)] [-s|--grab-str STR] [-a]
                    [--flag-b] [--flag-c ARG]
 
 Available options:
-  -i, --grab-int INT (Required) grab integer INT
-  -s, --grab-str STR            grab string STR
-  -a                            flag with short form only
-  --flag-b                      flag with long form only
-  --flag-c ARG                  flag with default value [Default: (1 2)]
+  -i, --grab-int INT (Required)  grab integer INT
+  -s, --grab-str STR             grab string STR
+  -a                             flag with short form only
+  --flag-b                       flag with long form only
+  --flag-c ARG                   flag with default value [Default: (1 2)]
 
 ")))))
 
