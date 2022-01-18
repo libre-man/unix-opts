@@ -86,7 +86,7 @@
   ;; logic to process them.
   (when-option (options :help)
     (opts:describe
-     :prefix "example—program to demonstrate unix-opts library"
+     :prefix (format nil "example—program to demonstrate unix-opts library~%")
      :suffix "so that's how it works…"
      :usage-of "example.sh"
      :args     "[FREE-ARGS]"))
