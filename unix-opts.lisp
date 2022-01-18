@@ -552,12 +552,13 @@ it gets too long. MARGIN specifies margin."
               (setf last-newline i))
             (princ str s)))))))
 
-(defun describe (&key prefix suffix usage-of args (stream *standard-output*) (argument-block-width 25)
+(defun describe (&key prefix tagline suffix usage-of args (stream *standard-output*) (argument-block-width 25)
                    (defined-options *options*) (usage-of-label "Usage") (available-options-label "Available options")
                    brief)
   "Return string describing options of the program that were defined with
 `define-opts' macro previously. You can supply PREFIX and SUFFIX arguments
-that will be printed before and after options respectively. If USAGE-OF is
+that will be printed before and after options respectively. TAGLINE, when
+supplied, will be printed on the line after usage. If USAGE-OF is
 supplied, it should be a string, name of the program for \"Usage: \"
 section. This section is only printed if this name is given.
 
@@ -586,14 +587,15 @@ The output goes to STREAM."
              (terpri stream))))
     (print-part prefix)
     (when usage-of
-      (format stream "~a: ~a~a~@[ ~a~]~%~%"
+      (format stream "~a: ~a~a~@[ ~a~]~%~@[~a~]~%"
               usage-of-label
               usage-of
               (print-opts* (+ (length usage-of-label)
                               (length usage-of)
                               2) ; colon and space
                            defined-options)
-              args))
+              args
+              tagline))
     (when (and (not (and usage-of brief)) defined-options)
       (format stream "~a:~%" available-options-label)
       (print-opts defined-options stream argument-block-width))
