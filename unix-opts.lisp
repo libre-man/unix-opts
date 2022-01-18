@@ -586,7 +586,6 @@ The output goes to STREAM."
              (terpri stream))))
     (print-part prefix)
     (when usage-of
-      (terpri stream)
       (format stream "~a: ~a~a~@[ ~a~]~%~%"
               usage-of-label
               usage-of
