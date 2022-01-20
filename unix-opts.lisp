@@ -160,9 +160,6 @@ an argument, it's given but cannot be parsed by argument parser."))
 (defparameter *options* nil
   "List of all defined options.")
 
-(defun make-options (opts)
-  (mapcar #'make-option opts))
-
 (defun make-option (args)
   "Register an option according to ARGS."
   (let ((name        (getf args :name))
@@ -200,6 +197,9 @@ Default value of ~A was provided." default))
                    :arg-parser  arg-parser
                    :default     default
                    :meta-var    meta-var)))
+
+(defun make-options (opts)
+  (mapcar #'make-option opts))
 
 (defmacro define-opts (&body descriptions)
   "Define command line options. Arguments of this macro must be plists
