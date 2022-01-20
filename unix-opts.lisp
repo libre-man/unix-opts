@@ -160,9 +160,6 @@ an argument, it's given but cannot be parsed by argument parser."))
 (defparameter *options* nil
   "List of all defined options.")
 
-(defun make-options (opts)
-  (mapcar #'make-option opts))
-
 (defun make-option (args)
   "Register an option according to ARGS."
   (let ((name        (getf args :name))
@@ -200,6 +197,9 @@ Default value of ~A was provided." default))
                    :arg-parser  arg-parser
                    :default     default
                    :meta-var    meta-var)))
+
+(defun make-options (opts)
+  (mapcar #'make-option opts))
 
 (defmacro define-opts (&body descriptions)
   "Define command line options. Arguments of this macro must be plists
@@ -244,7 +244,7 @@ the program as first elements of the list. Portable across implementations."
   #+clisp     (cons *load-truename* ext:*args*)
   #+clozure   ccl:*command-line-argument-list*
   #+cmu       extensions:*command-line-words*
-  #+ecl       (ext:command-args)
+  #+ecl       system:*unprocessed-ecl-command-args*
   #+gcl       si:*command-args*
   #+lispworks system:*line-arguments-list*
   #+sbcl      sb-ext:*posix-argv*)
@@ -386,6 +386,7 @@ to `nil')"
                         :missing-options missing)
                (skip-option ())
                (use-value (values)
+                 :interactive (lambda ())
                  (loop :for option :in missing
                        :for value :in values
                        :do (push (name option) options)
@@ -411,10 +412,12 @@ to `nil')"
                               :option poption-raw
                               :raw-arg arg)))
                  (use-value (value)
+                   :interactive (lambda ())
                    (push-option poption-name value))
                  (skip-option ()
                    (setf poption-name nil))
                  (reparse-arg (str)
+                   :interactive (lambda ())
                    (process-arg str))))
              (process-option (opt)
                (let ((option (find-option opt defined-options)))
@@ -432,6 +435,7 @@ to `nil')"
                          (error 'unknown-option
                                 :option opt)
                        (use-value (value)
+                         :interactive (lambda ())
                          (if (find-option value defined-options)
                              (process-option value)
                              (restart-case
@@ -447,6 +451,7 @@ to `nil')"
                    (error 'missing-arg
                           :option poption-raw)
                  (use-value (value)
+                   :interactive (lambda ())
                    (push-option poption-name value)
                    (when item
                      (process-option item)))
@@ -587,14 +592,17 @@ The output goes to STREAM."
     (print-part prefix)
     (when usage-of
       (terpri stream)
-      (format stream "~a: ~a~a~@[ ~a~]~%~%"
-              usage-of-label
-              usage-of
-              (print-opts* (+ (length usage-of-label)
-                              (length usage-of)
-                              2) ; colon and space
-                           defined-options)
-              args))
+      ;; Kill CLISP's *pprint-first-newline* to prevent bizarre
+      ;; newline insertion between usage-of and options summary.
+      (let ((*print-pretty* nil))
+        (format stream "~a: ~a~a~@[ ~a~]~%~%"
+                usage-of-label
+                usage-of
+                (print-opts* (+ (length usage-of-label)
+                                (length usage-of)
+                                2) ; colon and space
+                             defined-options)
+                args)))
     (when (and (not (and usage-of brief)) defined-options)
       (format stream "~a:~%" available-options-label)
       (print-opts defined-options stream argument-block-width))
