@@ -386,6 +386,7 @@ to `nil')"
                         :missing-options missing)
                (skip-option ())
                (use-value (values)
+                 :interactive (lambda ())
                  (loop :for option :in missing
                        :for value :in values
                        :do (push (name option) options)
@@ -411,10 +412,12 @@ to `nil')"
                               :option poption-raw
                               :raw-arg arg)))
                  (use-value (value)
+                   :interactive (lambda ())
                    (push-option poption-name value))
                  (skip-option ()
                    (setf poption-name nil))
                  (reparse-arg (str)
+                   :interactive (lambda ())
                    (process-arg str))))
              (process-option (opt)
                (let ((option (find-option opt defined-options)))
@@ -432,6 +435,7 @@ to `nil')"
                          (error 'unknown-option
                                 :option opt)
                        (use-value (value)
+                         :interactive (lambda ())
                          (if (find-option value defined-options)
                              (process-option value)
                              (restart-case
@@ -447,6 +451,7 @@ to `nil')"
                    (error 'missing-arg
                           :option poption-raw)
                  (use-value (value)
+                   :interactive (lambda ())
                    (push-option poption-name value)
                    (when item
                      (process-option item)))
